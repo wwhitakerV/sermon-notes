@@ -70,5 +70,17 @@ export function notesToText(
 		)
 	}
 
+	if (notes.reflectionQuestions.length > 0) {
+		lines.push(
+			'',
+			'',
+			'REFLECTION QUESTIONS',
+			'',
+			...notes.reflectionQuestions.map(
+				(item, index) => `${index + 1}. ${item}`,
+			),
+		)
+	}
+
 	return lines.join('\n')
 }

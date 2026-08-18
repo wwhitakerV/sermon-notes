@@ -19,6 +19,11 @@ Identify:
 - illustrations
 - applications
 - key takeaways
+- reflection:
+  - Questions must be grounded in what the preacher actually said; they may only prompt reflection on claims, texts, and applications already recorded in the notes.
+  - No new Scripture citations, and no doctrine the preacher didn't teach — the existing "never invent a Scripture reference" rule stays in force.
+  - Aimed at personal application and self-examination, phrased as open questions rather than quiz items with right answers.
+  - Guidance of 4–6 questions, so length is predictable.
 
 Preserve timestamps.
 

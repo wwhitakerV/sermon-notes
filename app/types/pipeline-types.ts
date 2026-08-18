@@ -1,4 +1,7 @@
-import type { SermonNotesType } from './sermon-notes-types'
+import type {
+	PartialSermonNotesType,
+	SermonNotesType,
+} from './sermon-notes-types'
 
 /** What we can learn about a video before any work starts. */
 export type VideoMetaType = {
@@ -34,5 +37,6 @@ export type PipelineEventType =
 	| { type: 'step'; step: PipelineStepType; state: StepStateType }
 	| { type: 'meta'; meta: VideoMetaType }
 	| { type: 'detail'; step: PipelineStepType; detail: string }
+	| { type: 'notes-delta'; notes: PartialSermonNotesType }
 	| { type: 'complete'; notes: SermonNotesType }
 	| { type: 'error'; code: ErrorCodeType; message: string }

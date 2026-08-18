@@ -274,4 +274,12 @@ export const sampleNotes: SermonNotesType = {
 		"Believers should listen confidently: the kingdom's seemingly small beginning will produce a vast, triumphant outcome that includes people from the nations.",
 		'Evangelistic faithfulness consists in clearly communicating the truth rather than attempting to produce conversion through mood, manipulation, marketing, or other human techniques.',
 	],
+	reflectionQuestions: [
+		'The preacher argued that genuine faith is evidenced by a continuing response to Scripture rather than by a past prayer, religious act, or record of church attendance. What does your ongoing response to God\u2019s Word suggest about how you are actually listening?',
+		'If light is given to shine and seed is given to sow, where have you been treating divine truth as something to keep rather than something you have been commissioned to pass on?',
+		'The sermon called believers to listen appreciatively, investing generously in proclaiming the truth. What would investing more generously look like in your particular circumstances this week?',
+		'Where are you tempted to assume responsibility for producing spiritual life in another person, rather than telling the truth faithfully and resting in God\u2019s sovereign work?',
+		'The preacher distinguished clear communication of the truth from mood, manipulation, and marketing. Are there places where you have leaned on technique instead of trusting the seed itself?',
+		'Given the claim that the kingdom\u2019s small beginning yields a vast and triumphant outcome, how would listening confidently change the way you face discouragement in sharing the gospel?',
+	],
 }

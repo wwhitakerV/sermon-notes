@@ -49,6 +49,8 @@
 	--animate-sweep: sweep 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 	--animate-breathe: breathe 2s ease-in-out infinite;
 	--animate-draw: draw 0.45s cubic-bezier(0.65, 0, 0.35, 1) both;
+	--animate-word: word-in 0.34s ease-out both;
+	--animate-caret: caret 1.05s ease-in-out infinite;
 }
 
 @keyframes rise {
@@ -92,6 +94,28 @@
 	}
 }
 
+@keyframes word-in {
+	from {
+		opacity: 0;
+		filter: blur(5px);
+	}
+	to {
+		opacity: 1;
+		filter: blur(0);
+	}
+}
+
+@keyframes caret {
+	0%,
+	45% {
+		opacity: 1;
+	}
+	55%,
+	100% {
+		opacity: 0.12;
+	}
+}
+
 @keyframes draw {
 	from {
 		stroke-dashoffset: 24;
@@ -106,6 +130,19 @@ body {
 	color: var(--ink);
 	font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 	-webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Tailwind v4 resets buttons to the default arrow, so every interactive
+ * control would otherwise need `cursor-pointer` hung on it by hand. Anchors
+ * already get this from the user agent; disabled controls are left alone.
+ */
+@layer base {
+	button:not(:disabled),
+	summary,
+	[role='button']:not([aria-disabled='true']) {
+		cursor: pointer;
+	}
 }
 
 /* Serif display face gets slightly tighter optical spacing */

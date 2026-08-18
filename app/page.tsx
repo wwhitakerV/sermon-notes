@@ -5,6 +5,7 @@ import { NotesView } from './components/notes-view'
 import { ProgressView, type StepStatusType } from './components/progress-view'
 import { TakeNotesForm } from './components/take-notes-form'
 import { LampMark } from './components/icons'
+import { coalesceNotes, hasCompleteSection } from './lib/partial-notes'
 import { extractVideoId } from './lib/youtube'
 import { PIPELINE_STEPS } from './types'
 import type {
@@ -15,11 +16,17 @@ import type {
 	VideoMetaType,
 } from './types'
 
-type PhaseType = 'idle' | 'working' | 'done'
+type PhaseType = 'idle' | 'working' | 'streaming' | 'done'
 type StepMapType = Record<PipelineStepType, StepStatusType>
 type PageErrorType = { code: ErrorCodeType; message: string }
 
 const META_DEBOUNCE_MS = 350
+
+/**
+ * Beat between the last progress step completing and the notes page taking
+ * over, so the reader actually sees that fourth check land.
+ */
+const HANDOFF_DWELL_MS = 650
 
 function freshSteps(): StepMapType {
 	return Object.fromEntries(
@@ -38,6 +45,7 @@ export default function Home() {
 
 	const resolvedId = useRef<string | null>(null)
 	const abortRef = useRef<AbortController | null>(null)
+	const handoffRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
 	// Resolve the video as soon as a usable link is in the box, so the user can
 	// confirm they pasted the sermon they meant to before committing to a run.
@@ -84,10 +92,43 @@ export default function Home() {
 	}, [url])
 
 	useEffect(() => {
-		window.scrollTo({ top: 0 })
+		// Not on `done`: by then the notes are already on screen and the reader may
+		// have scrolled well into them while the rest was still being written.
+		if (phase !== 'done') {
+			window.scrollTo({ top: 0 })
+		}
 	}, [phase])
 
-	useEffect(() => () => abortRef.current?.abort(), [])
+	useEffect(
+		() => () => {
+			abortRef.current?.abort()
+			cancelHandoff()
+		},
+		[],
+	)
+
+	function cancelHandoff() {
+		if (handoffRef.current) {
+			clearTimeout(handoffRef.current)
+			handoffRef.current = null
+		}
+	}
+
+	/**
+	 * The progress list and the notes page are driven by the same milestone, so
+	 * the handoff waits a beat rather than swapping the screen out in the same
+	 * frame the final check turns green.
+	 */
+	function scheduleHandoff() {
+		if (handoffRef.current) {
+			return
+		}
+
+		handoffRef.current = setTimeout(() => {
+			handoffRef.current = null
+			setPhase(current => (current === 'working' ? 'streaming' : current))
+		}, HANDOFF_DWELL_MS)
+	}
 
 	function handleUrlChange(next: string) {
 		setUrl(next)
@@ -122,12 +163,28 @@ export default function Home() {
 				resolvedId.current = event.meta.videoId
 				setMeta(event.meta)
 				break
+			case 'notes-delta': {
+				const partial = coalesceNotes(event.notes)
+
+				setNotes(partial)
+
+				// Wait for the outline to take shape — the same milestone that
+				// completes the last progress step — so every check is green before
+				// the notes page appears, and it opens with content already in it.
+				if (hasCompleteSection(partial)) {
+					scheduleHandoff()
+				}
+
+				break
+			}
 			case 'complete':
 				setNotes(event.notes)
 				setPhase('done')
 				break
 			case 'error':
+				cancelHandoff()
 				setError({ code: event.code, message: event.message })
+				setNotes(null)
 				setPhase('idle')
 				break
 		}
@@ -180,6 +237,7 @@ export default function Home() {
 						? caught.message
 						: 'Something went wrong while taking notes. Please try again.',
 			})
+			setNotes(null)
 			setPhase('idle')
 		}
 	}
@@ -187,6 +245,8 @@ export default function Home() {
 	function handleCancel() {
 		abortRef.current?.abort()
 		abortRef.current = null
+		cancelHandoff()
+		setNotes(null)
 		setPhase('idle')
 		setSteps(freshSteps())
 	}
@@ -194,6 +254,7 @@ export default function Home() {
 	function handleReset() {
 		abortRef.current?.abort()
 		abortRef.current = null
+		cancelHandoff()
 		resolvedId.current = null
 		setUrl('')
 		setMeta(null)
@@ -203,10 +264,15 @@ export default function Home() {
 		setPhase('idle')
 	}
 
-	if (phase === 'done' && notes) {
+	if ((phase === 'streaming' || phase === 'done') && notes) {
 		return (
 			<main className="flex-1">
-				<NotesView notes={notes} meta={meta} onReset={handleReset} />
+				<NotesView
+					notes={notes}
+					meta={meta}
+					onReset={handleReset}
+					streaming={phase === 'streaming'}
+				/>
 			</main>
 		)
 	}

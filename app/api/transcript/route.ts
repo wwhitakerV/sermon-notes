@@ -13,6 +13,11 @@ import {
 	transcriptDuration,
 } from './utils'
 import { generateSermonNotes } from './generate-sermon-notes'
+import {
+	coalesceNotes,
+	hasCompleteSection,
+	hasRenderableNotes,
+} from '@/app/lib/partial-notes'
 
 const NDJSON = 'application/x-ndjson'
 
@@ -149,8 +154,31 @@ async function runPipeline(
 
 	let notes: SermonNotesType
 
+	// The last two steps used to complete only once the whole generation had
+	// finished, which is long after the reader has been handed the notes page.
+	// They are tied to what the stream actually shows instead.
+	let understood = false
+	let organizedEarly = false
+
 	try {
-		notes = await generateSermonNotes(formattedTranscript)
+		// Each snapshot rides the same event stream the progress steps use, so the
+		// notes appear in the UI while the model is still writing them.
+		notes = await generateSermonNotes(formattedTranscript, snapshot => {
+			send({ type: 'notes-delta', notes: snapshot })
+
+			const partial = coalesceNotes(snapshot)
+
+			if (!understood && hasRenderableNotes(partial)) {
+				understood = true
+				send({ type: 'step', step: 'understand', state: 'done' })
+				send({ type: 'step', step: 'organize', state: 'active' })
+			}
+
+			if (!organizedEarly && hasCompleteSection(partial)) {
+				organizedEarly = true
+				send({ type: 'step', step: 'organize', state: 'done' })
+			}
+		})
 	} catch (error) {
 		console.error(error)
 
@@ -160,8 +188,12 @@ async function runPipeline(
 		)
 	}
 
-	send({ type: 'step', step: 'understand', state: 'done' })
-	send({ type: 'step', step: 'organize', state: 'active' })
+	// Fallbacks for a run that never hit the milestones above — a sermon the
+	// model returns in one delta, or one that yields no sections at all.
+	if (!understood) {
+		send({ type: 'step', step: 'understand', state: 'done' })
+		send({ type: 'step', step: 'organize', state: 'active' })
+	}
 
 	const organized = organizeNotes(notes)
 
@@ -170,7 +202,10 @@ async function runPipeline(
 		step: 'organize',
 		detail: `${organized.sections.length} sections · ${organized.scripturesReferenced.length} Scriptures`,
 	})
-	send({ type: 'step', step: 'organize', state: 'done' })
+
+	if (!organizedEarly) {
+		send({ type: 'step', step: 'organize', state: 'done' })
+	}
 
 	return organized
 }
@@ -201,6 +236,9 @@ function organizeNotes(notes: SermonNotesType): SermonNotesType {
 			return true
 		}),
 		keyTakeaways: notes.keyTakeaways.map(item => item.trim()).filter(Boolean),
+		reflectionQuestions: notes.reflectionQuestions
+			.map(item => item.trim())
+			.filter(Boolean),
 	}
 }
 

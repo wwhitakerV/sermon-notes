@@ -4,20 +4,15 @@ import Image from 'next/image'
 import { useRef } from 'react'
 import type { ErrorCodeType, VideoMetaType } from '@/app/types'
 import { formatSeconds } from '@/app/lib/youtube'
-import {
-	AlertIcon,
-	ArrowRightIcon,
-	CloseIcon,
-	YouTubeIcon,
-} from './icons'
+import { AlertIcon, ArrowRightIcon, CloseIcon, YouTubeIcon } from './icons'
 
 const INCLUDES = [
 	'Main idea',
 	'Sermon outline',
 	'Scriptures',
-	'Applications',
+	'Practical applications',
 	'Key takeaways',
-	'Timestamps',
+	'Reflection Questions',
 ]
 
 type Props = {
@@ -65,8 +60,8 @@ export function TakeNotesForm({
 
 				<p className="text-ink-muted mx-auto mt-5 max-w-lg text-[1.0625rem] leading-relaxed text-pretty">
 					Paste a YouTube sermon and get the main teaching, Scripture
-					references, applications, and timestamps — organized so you can
-					actually study it later.
+					references, practical applications, and reflection questions —
+					organized so you can actually study it later.
 				</p>
 			</div>
 
