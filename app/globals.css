@@ -1,26 +1,188 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+	color-scheme: light;
+
+	/* Surfaces — warm paper */
+	--paper: #faf8f5;
+	--paper-sunk: #f3eee6;
+	--surface: #ffffff;
+
+	/* Ink */
+	--ink: #1a1815;
+	--ink-muted: #5c554c;
+	--ink-faint: #7c7468;
+
+	/* Hairlines */
+	--line: #e8e1d7;
+	--line-strong: #d9d0c3;
+
+	/* Ember accent — the one pop of color */
+	--accent: #e2590b;
+	--accent-strong: #b8460a;
+	--accent-tint: #fdf1e7;
+	--accent-glow: rgb(226 89 11 / 0.16);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+	--color-paper: var(--paper);
+	--color-paper-sunk: var(--paper-sunk);
+	--color-surface: var(--surface);
+
+	--color-ink: var(--ink);
+	--color-ink-muted: var(--ink-muted);
+	--color-ink-faint: var(--ink-faint);
+
+	--color-line: var(--line);
+	--color-line-strong: var(--line-strong);
+
+	--color-accent: var(--accent);
+	--color-accent-strong: var(--accent-strong);
+	--color-accent-tint: var(--accent-tint);
+
+	--font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+	--font-serif: var(--font-fraunces), ui-serif, Georgia, serif;
+	--font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+	--animate-rise: rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+	--animate-fade: fade 0.4s ease-out both;
+	--animate-sweep: sweep 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+	--animate-breathe: breathe 2s ease-in-out infinite;
+	--animate-draw: draw 0.45s cubic-bezier(0.65, 0, 0.35, 1) both;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@keyframes rise {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@keyframes fade {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes sweep {
+	from {
+		transform: translateX(-100%);
+	}
+	to {
+		transform: translateX(200%);
+	}
+}
+
+@keyframes breathe {
+	0%,
+	100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+	50% {
+		opacity: 0.55;
+		transform: scale(0.82);
+	}
+}
+
+@keyframes draw {
+	from {
+		stroke-dashoffset: 24;
+	}
+	to {
+		stroke-dashoffset: 0;
+	}
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+	background-color: var(--paper);
+	color: var(--ink);
+	font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+
+/* Serif display face gets slightly tighter optical spacing */
+.font-serif {
+	font-variation-settings: 'SOFT' 20;
+	letter-spacing: -0.015em;
+}
+
+/* Warm ambient light behind the hero */
+.ambient-light {
+	background:
+		radial-gradient(
+			62rem 34rem at 50% -8rem,
+			var(--accent-glow),
+			transparent 70%
+		),
+		radial-gradient(
+			44rem 28rem at 88% 8%,
+			rgb(226 89 11 / 0.06),
+			transparent 65%
+		);
+}
+
+/* Subtle paper grain, kept nearly invisible */
+.grain::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	opacity: 0.5;
+	background-image: radial-gradient(
+		circle at 1px 1px,
+		rgb(26 24 21 / 0.045) 1px,
+		transparent 0
+	);
+	background-size: 22px 22px;
+	mask-image: radial-gradient(60rem 40rem at 50% 0%, black, transparent 75%);
+}
+
+/* Notes prose rhythm */
+.note-body {
+	text-wrap: pretty;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}
+
+@media print {
+	.no-print {
+		display: none !important;
+	}
+
+	body {
+		background: #fff;
+	}
+
+	.print-plain {
+		border: 0 !important;
+		box-shadow: none !important;
+		background: transparent !important;
+		padding: 0 !important;
+	}
+
+	.print-break {
+		break-inside: avoid;
+	}
+
+	a {
+		text-decoration: none;
+		color: inherit;
+	}
 }

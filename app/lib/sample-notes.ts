@@ -1,0 +1,277 @@
+import type { SermonNotesType } from '@/app/types'
+
+/**
+ * Real output from the pipeline, kept so the notes layout can be worked on
+ * (and reviewed) at `/?demo` without spending a transcript or model call.
+ */
+export const sampleNotes: SermonNotesType = {
+	title:
+		'Take Care How You Listen: Four Characteristics of a Good Spiritual Listener',
+	mainIdea:
+		"Because believers have been graciously enabled to hear and understand divine truth, they must listen to God's Word obediently, appreciatively, dependently, and confidently—shining its light and sowing its seed while trusting God to produce growth and fulfill the kingdom's triumphant outcome.",
+	mainTexts: [{ reference: 'Mark 4:21-34', timestamp: '00:00:03' }],
+	sections: [
+		{
+			title: 'The Privilege and Mark of Hearing Divine Truth',
+			timestamp: '00:00:34-00:06:36',
+			scriptures: ['Mark 4:1-20', 'John 10:3-4, 16, 26', 'Ephesians 2:10'],
+			notes: [
+				'The parable of the soils distinguishes unproductive soil from good soil. The hard, rocky, and thorny soils ultimately produce nothing, while good soil produces thirtyfold, sixtyfold, and a hundredfold.',
+				'The central difference is hearing in the sense of embracing and believing the gospel. The rocky and weedy soils may show initial responses, but their lack of lasting fruit exposes those responses as superficial.',
+				"The preacher calls divine revelation the greatest grace gift in the sense that people would know nothing about salvation without God's revealed truth. Scripture is necessary for salvation, sanctification, instruction in righteousness, and the hope of glory.",
+				"The preacher interprets the natural person's inability to receive God's truth and the believer's possession of the mind of Christ as explaining why true Christians embrace divine truth.",
+				"In John 10, Jesus' sheep hear and know the Shepherd's voice, follow Him, and do not follow strangers. The preacher applies this to believers' receptivity to God's voice through Scripture.",
+				'The thirtyfold, sixtyfold, and hundredfold fruit is interpreted primarily as evangelistic fruitfulness and participation in the expansion of the kingdom, though the preacher says the fruit of the Spirit is also true of believers.',
+				"According to the preacher's application of Ephesians 2:10, believers are ordained for good works, with gospel influence occupying a leading place among those works. Evangelism is commonly a collective process involving many testimonies and godly examples over time.",
+			],
+			application:
+				"Evaluate genuine faith by one's continuing response to Scripture—not merely by a past prayer, religious act, or church attendance. Seek to hear, believe, love, obey, absorb, and proclaim God's truth.",
+		},
+		{
+			title: 'Take Care How You Listen',
+			timestamp: '00:06:36-00:12:04',
+			scriptures: ['Mark 4:10-13, 23-24', 'Luke 8:18'],
+			notes: [
+				'Mark 4:23 repeats the call, “If anyone has ears to hear, let him hear.” The preacher explains that not everyone possesses spiritual ears that receive, believe, love, and obey divine truth.',
+				"At salvation, the Lord opens a person's spiritual ears, giving a new hunger for and understanding of God's Word.",
+				"Mark 4:24 is addressed to Jesus' followers and disciples, distinguished from the surrounding crowd in Mark 4:10-13.",
+				'The preacher explains the Greek wording behind “Take care what you listen to” as carrying the idea, “Be seeing what you are hearing.” His point is that believers must mentally perceive and carefully understand what God says.',
+				'Believers have been privileged to know the mysteries of the kingdom that remain hidden from the unbelieving world.',
+				'Luke 8:18 expresses the parallel command as, “Take care how you listen.”',
+				'The sermon organizes good spiritual listening under four characteristics: obediently, appreciatively, dependently, and confidently.',
+			],
+			application:
+				"Listen to Scripture thoughtfully and carefully. Seek full mental and spiritual understanding so that God's evangelistic calling and commission may be obeyed faithfully.",
+		},
+		{
+			title: 'Listen Obediently: Light Is Given to Shine',
+			timestamp: '00:12:39-00:17:38',
+			scriptures: [
+				'Mark 4:21-22',
+				'Psalm 119:105',
+				'2 Corinthians (passage not specified)',
+				'Luke 24',
+				'Matthew 28',
+				'Acts 1',
+			],
+			notes: [
+				'The first characteristic of a good spiritual listener is obedient listening.',
+				'In Mark 4:21-22, Jesus uses simple truisms: a lamp is not brought to be placed under a basket or bed but on a lampstand. The preacher interprets this to mean that those given divine light are responsible to let it shine.',
+				'The lamp described was a small clay or terra-cotta oil lamp placed on a floor stand or wall shelf. Covering it with a grain-measuring basket or placing it under a raised bed would defeat its purpose and could create danger.',
+				"The disciples would have recognized light as a biblical metaphor for God's truth. Psalm 119:105 describes God's Word as a lamp and light.",
+				'Receiving divine truth entails reflecting it. The preacher compares this to seed: seed is given to be sown, not stored.',
+				"This teaching functions as a pre-Great Commission commission. The fuller worldwide commission would follow Jesus' death and resurrection and the coming power of the Holy Spirit.",
+				"The preacher connects this principle to Jesus' Sermon on the Mount command to let one's light shine so that others see good works and glorify the Father.",
+			],
+			application:
+				'Treat the reception of gospel truth as a commission. Do not hide what God has revealed; shine the light and sow the seed at the proper time and in the way Christ commands.',
+		},
+		{
+			title: 'Temporary Concealment and the Coming Commission',
+			timestamp: '00:18:10-00:24:03',
+			scriptures: ['Mark 4:11', 'Mark 3:22', 'Mark 1:40-45', 'Mark 6:7-13'],
+			notes: [
+				'A major contextual question is why Jesus was now concealing truth in unexplained parables while simultaneously teaching that light must shine.',
+				"According to the preacher's interpretation of Mark 4:11, Jesus' unexplained parables were an act of divine judgment upon people in Galilee who had persistently rejected Him.",
+				"Mark 3:22 records the leaders' verdict that Jesus was possessed by Beelzebul and cast out demons by the ruler of demons. The preacher says this settled rejection led Jesus to withhold further explanation from the crowd while privately explaining truth to His disciples.",
+				"The disciples might have wondered whether their role was now to conceal truth or pronounce judgment. The preacher recalls James and John's desire to call down fire on a rejecting village as an example of this possible mindset.",
+				"Jesus had previously restrained premature or disruptive publicity. In Mark 1:40-45, a healed man disobeyed Jesus' instruction not to spread the report, making public ministry in the cities difficult.",
+				'The disciples were not yet fully trained and could not yet preach the completed message of the cross and resurrection.',
+				'In Mark 6:7-13, Jesus later sent the Twelve in pairs to preach repentance, cast out demons, and heal the sick. This was described as a short-term training mission rather than their final commission.',
+				'The disciples were instructed to shake the dust from their feet when rejected, preparing them for the reception they would face in later ministry.',
+			],
+			application:
+				"Do not mistake a temporary withholding of truth in judgment for a permanent command to hide the gospel. Follow Christ's timing and instruction while recognizing that His ultimate plan is worldwide proclamation.",
+		},
+		{
+			title: 'Hidden Temporarily, Revealed Permanently',
+			timestamp: '00:24:34-00:27:15',
+			scriptures: ['Mark 4:22', 'Matthew 10:26', 'Luke 9'],
+			notes: [
+				'Mark 4:22 teaches that what is hidden is intended to be revealed and what is secret is intended to come to light.',
+				'The preacher illustrates temporary concealment with parents hiding Christmas presents until the appropriate time. Something valuable may rightly be hidden because a proper time for disclosure is coming.',
+				"Jesus' truth was temporarily hidden from a rejecting audience but would later be permanently proclaimed after His death and resurrection.",
+				'Matthew 10:26 is cited as expressing the principle that concealment serves a future disclosure.',
+				"The disciples' pre-cross missions were limited and temporary, while the full commission would become worldwide.",
+				"Mark's writing of the Gospel itself contributes to the disclosure and proclamation of Christ's story.",
+			],
+			application:
+				"Be ready to disclose gospel truth in God's appointed time. The present calling of believers is to make known what was temporarily hidden and to participate in worldwide evangelism.",
+		},
+		{
+			title: 'Listen Appreciatively: God Rewards Faithful Sowing',
+			timestamp: '00:27:46-00:34:14',
+			scriptures: [
+				'Mark 4:23-25',
+				'Galatians 6:7',
+				'Luke 6:38',
+				'Matthew 13:12',
+				'1 Corinthians 7',
+				'Matthew 7:21',
+			],
+			notes: [
+				'The second characteristic of a good spiritual listener is appreciative listening.',
+				"The agricultural principle in Mark 4:24-25 is that the measure used will be measured back, with more given besides. The preacher interprets this as God's gracious return upon faithful gospel sowing.",
+				'Galatians 6:7 is cited for the principle that a person reaps what he sows. The preacher also states the principle that sparing sowing produces sparing reaping and bountiful sowing produces bountiful reaping.',
+				'This does not mean every gospel seed results in a conversion. It means God faithfully blesses those who faithfully sow.',
+				'Luke 6:38 is cited to emphasize a return that is pressed down, shaken together, and running over.',
+				'Those who truly possess eternal life and gospel truth will receive more: increased understanding, truth, grace, power, joy, satisfaction, fulfillment, abundant life, and eternal reward.',
+				'The contrast concerns false disciples and associated unbelievers who think they possess spiritual life but do not. Even what they think they have will be taken away.',
+				'Matthew 7:21 is used to describe those who claim religious works but are ultimately told by Christ that He never knew them.',
+				'The preacher stresses that the blessing is individual: each believer receives God’s gracious return upon personal faithfulness in evangelism.',
+			],
+			application:
+				'Invest generously in proclaiming divine truth, trusting that God will give spiritual blessing, deeper understanding, usefulness, joy, and eternal reward beyond what is deserved.',
+		},
+		{
+			title: 'Listen Dependently: God Alone Produces Growth',
+			timestamp: '00:34:45-00:39:00',
+			scriptures: [
+				'Mark 4:26-29',
+				'1 Corinthians 3',
+				'John 3',
+				'John 1:12',
+				'Romans 1',
+				'Philippians 1:6',
+			],
+			notes: [
+				'The third characteristic of a good spiritual listener is dependent, or humble, listening.',
+				'In Mark 4:26-29, a man casts seed on the soil, sleeps and rises, and watches the seed progress from blade to head to mature grain and harvest without understanding or causing its growth.',
+				'The preacher rejects an eschatological interpretation of the harvest in this particular parable. His reason is that the farmer has been sleeping, whereas Christ will not awaken from sleep to return in judgment.',
+				"The farmer's role is to plant; he does not create life or control the crop's growth. Likewise, believers proclaim the gospel but cannot produce regeneration.",
+				'The paradox of a seed dying and then producing life pictures the mysterious, life-giving power contained in the gospel.',
+				'Christians can speak and communicate truth, but they cannot control results, change hearts, or give life to the spiritually dead.',
+				'First Corinthians 3 is cited for the truth that God gives the increase. John 3 is cited for the necessity of birth from above.',
+				'The progression from blade to mature grain is interpreted as evidence that what God begins, He completes. Philippians 1:6 supports this point.',
+			],
+			application:
+				"Faithfully tell the truth, then rest in God's sovereign work. Do not live in panic or assume responsibility for producing spiritual life in another person.",
+		},
+		{
+			title: 'Divine Growth, Not Human Manipulation',
+			timestamp: '00:39:36-00:42:15',
+			scriptures: ['Mark 4:28', '2 Timothy 2:6'],
+			notes: [
+				"No human persuasiveness or cleverness contributes to regeneration, conversion, or justification; the believer's task is to give the truth.",
+				'The preacher warns against the idea that improved marketing can make people believe or cause them to be saved.',
+				'Music may convey gospel content through what is said or sung, but mood and musical style do not produce regeneration.',
+				'The phrase “the soil produces crops by itself” uses a Greek word related to the English word “automatically.” The preacher describes spiritual growth as “divinely automatic,” meaning it is God’s work rather than a humanly engineered process.',
+				"Human beings cannot initiate or stop God's saving work. Once God begins it, He brings it to completion.",
+				'Second Timothy 2:6 is used to picture the hardworking farmer enjoying the harvest. Believers do not create salvation, but they share in its joyful results.',
+				'The success of the gospel does not depend on making it acceptable, manipulating the will, or manipulating emotions.',
+			],
+			application:
+				'Reject manipulative approaches to evangelism. Communicate gospel truth clearly and rely upon God rather than marketing, atmosphere, musical style, invitations, emotional pressure, or human persuasiveness.',
+		},
+		{
+			title: "Listen Confidently: The Kingdom's Inevitable Growth",
+			timestamp: '00:42:47-00:47:41',
+			scriptures: [
+				'Mark 4:30-32',
+				'Matthew 17:20',
+				'Ezekiel 17',
+				'Daniel 4:10, 21',
+			],
+			notes: [
+				'The fourth characteristic of a good spiritual listener is confident listening.',
+				'The disciples could obey, appreciate, and depend upon God yet still wonder what final result could come from such a small and apparently fragile beginning.',
+				'In Mark 4:30-32, Jesus compares the kingdom to a mustard seed that begins extremely small but grows into a large plant with branches where birds can nest.',
+				'The mustard seed was not claimed to be the smallest seed on the planet; it was the smallest familiar seed commonly used in their farming and had become proverbial for smallness.',
+				'The preacher describes the seed as approximately the size of a grain of sand and the mature mustard plant as reaching up to fifteen feet high and six feet in diameter.',
+				"The point is that the kingdom's small beginning gives no indication of the immense scale of its final growth.",
+				"The preacher interprets this as a prophecy of the gospel's and church's triumphant expansion throughout history, ultimately culminating in the Millennial Kingdom when Christ rules the world.",
+				"The birds nesting in the tree's shade are connected to Ezekiel 17, which the preacher describes as a messianic prophecy picturing nations coming into blessing under Messiah's rule.",
+				"Daniel 4:10 and 21 similarly use birds in a tree to represent peoples and nations under Nebuchadnezzar's rule.",
+				'The disciples could not see what later believers have seen: the gospel extending to the ends of the earth.',
+			],
+			application:
+				'Serve with confidence even when the work appears small or fragile. Trust that God will bring the kingdom to its appointed, worldwide, triumphant outcome.',
+		},
+		{
+			title: 'The Privilege and Responsibility of True Listeners',
+			timestamp: '00:47:41-00:49:53',
+			scriptures: ['Mark 4:33-34', 'Matthew 13'],
+			notes: [
+				"Mark 4:33-34 summarizes Jesus' method: He spoke to the crowd in parables according to what they were able to hear, but privately explained everything to His own disciples.",
+				'Additional parables from these occasions in Galilee are found in Matthew 13.',
+				"The sermon returns to its opening theme: the Christian's great privilege is to know divine truth, and a distinguishing mark of a Christian is to know, love, obey, and listen to that truth.",
+				'The preacher describes believers as speaking God’s language: when God speaks through Scripture, they understand, while it remains foreign to the unbelieving world.',
+				'The final prayer asks God to make believers faithful listeners who maximize their usefulness as thirtyfold, sixtyfold, and hundredfold Christians.',
+			],
+			application:
+				'Value the privilege of understanding Scripture and respond by becoming a careful, obedient, appreciative, humble, and confident listener who bears abundant evangelistic fruit.',
+		},
+	],
+	scripturesReferenced: [
+		{ reference: 'Mark 4:1-20', timestamp: '00:00:34' },
+		{ reference: 'John 10:3-4, 16, 26', timestamp: '00:03:18' },
+		{ reference: 'Ephesians 2:10', timestamp: '00:06:03' },
+		{ reference: 'Mark 4:23-24', timestamp: '00:06:36' },
+		{ reference: 'Mark 4:9', timestamp: '00:07:08' },
+		{ reference: 'Mark 4:10-13', timestamp: '00:08:12' },
+		{ reference: 'Luke 8:18', timestamp: '00:12:04' },
+		{ reference: 'Mark 4:21-22', timestamp: '00:12:39' },
+		{ reference: 'Psalm 119:105', timestamp: '00:15:59' },
+		{
+			reference: '2 Corinthians (passage not specified)',
+			timestamp: '00:16:36',
+		},
+		{ reference: 'Luke 24 (Great Commission passage)', timestamp: '00:17:08' },
+		{
+			reference: 'Matthew 28 (Great Commission passage)',
+			timestamp: '00:17:08',
+		},
+		{ reference: 'Acts 1', timestamp: '00:17:08' },
+		{
+			reference: 'Sermon on the Mount (specific reference not named)',
+			timestamp: '00:17:38',
+		},
+		{ reference: 'Mark 4:11', timestamp: '00:18:41' },
+		{ reference: 'Mark 3:22', timestamp: '00:19:18' },
+		{ reference: 'Mark 1:40-45', timestamp: '00:21:56' },
+		{ reference: 'Mark 6:7-13', timestamp: '00:22:27' },
+		{ reference: 'Matthew 10:26', timestamp: '00:26:06' },
+		{ reference: 'Matthew 10', timestamp: '00:26:41' },
+		{ reference: 'Luke 9', timestamp: '00:26:41' },
+		{ reference: 'Mark 4:24-25', timestamp: '00:27:46' },
+		{ reference: 'Galatians 6:7', timestamp: '00:29:27' },
+		{ reference: 'Luke 6:38', timestamp: '00:29:59' },
+		{ reference: 'Matthew 13:12', timestamp: '00:31:01' },
+		{ reference: '1 Corinthians 7', timestamp: '00:32:37' },
+		{ reference: 'Hebrews (passage not specified)', timestamp: '00:33:10' },
+		{ reference: 'Matthew 7:21', timestamp: '00:33:10' },
+		{ reference: 'Mark 4:26-29', timestamp: '00:34:45' },
+		{ reference: '1 Corinthians 3', timestamp: '00:37:54' },
+		{ reference: 'John 3', timestamp: '00:37:54' },
+		{
+			reference: 'John 1:12 (as cited by the preacher)',
+			timestamp: '00:38:28',
+		},
+		{
+			reference: 'Romans 1 (gospel as the power of God for salvation)',
+			timestamp: '00:38:28',
+		},
+		{ reference: 'Philippians 1:6', timestamp: '00:39:00' },
+		{ reference: '2 Timothy 2:6', timestamp: '00:41:12' },
+		{ reference: 'Mark 4:30-32', timestamp: '00:42:47' },
+		{ reference: 'Matthew 17:20', timestamp: '00:43:48' },
+		{ reference: 'Ezekiel 17', timestamp: '00:46:33' },
+		{ reference: 'Daniel 4:10, 21', timestamp: '00:46:33' },
+		{
+			reference:
+				'Revelation (people from every tongue, tribe, nation, and people around God’s throne)',
+			timestamp: '00:47:09',
+		},
+		{ reference: 'Matthew 13', timestamp: '00:47:41' },
+		{ reference: 'Mark 4:33-34', timestamp: '00:47:41' },
+	],
+	keyTakeaways: [
+		'Divine revelation is an immense gift because the truth of Scripture is necessary for salvation, sanctification, righteousness, and the hope of glory.',
+		'The preacher identifies responsiveness to divine truth—hearing, believing, loving, obeying, and proclaiming it—as a distinguishing mark of a true Christian.',
+		'Believers should listen obediently: receiving the light and seed of divine truth carries an obligation to shine the light and sow the seed.',
+		'Believers should listen appreciatively: God promises abundant spiritual blessing and eternal reward to those who faithfully invest in proclaiming the truth.',
+		'Believers should listen dependently and humbly: Christians communicate the gospel, but only God can regenerate hearts, produce spiritual life, and bring growth to completion.',
+		"Believers should listen confidently: the kingdom's seemingly small beginning will produce a vast, triumphant outcome that includes people from the nations.",
+		'Evangelistic faithfulness consists in clearly communicating the truth rather than attempting to produce conversion through mood, manipulation, marketing, or other human techniques.',
+	],
+}

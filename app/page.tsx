@@ -1,69 +1,288 @@
-import Image from "next/image";
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
+import { NotesView } from './components/notes-view'
+import { ProgressView, type StepStatusType } from './components/progress-view'
+import { TakeNotesForm } from './components/take-notes-form'
+import { LampMark } from './components/icons'
+import { extractVideoId } from './lib/youtube'
+import { PIPELINE_STEPS } from './types'
+import type {
+	ErrorCodeType,
+	PipelineEventType,
+	PipelineStepType,
+	SermonNotesType,
+	VideoMetaType,
+} from './types'
+
+type PhaseType = 'idle' | 'working' | 'done'
+type StepMapType = Record<PipelineStepType, StepStatusType>
+type PageErrorType = { code: ErrorCodeType; message: string }
+
+const META_DEBOUNCE_MS = 350
+
+function freshSteps(): StepMapType {
+	return Object.fromEntries(
+		PIPELINE_STEPS.map(step => [step, { state: 'pending' }]),
+	) as StepMapType
+}
 
 export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+	const [url, setUrl] = useState('')
+	const [meta, setMeta] = useState<VideoMetaType | null>(null)
+	const [metaLoading, setMetaLoading] = useState(false)
+	const [phase, setPhase] = useState<PhaseType>('idle')
+	const [steps, setSteps] = useState<StepMapType>(freshSteps)
+	const [notes, setNotes] = useState<SermonNotesType | null>(null)
+	const [error, setError] = useState<PageErrorType | null>(null)
+
+	const resolvedId = useRef<string | null>(null)
+	const abortRef = useRef<AbortController | null>(null)
+
+	// Resolve the video as soon as a usable link is in the box, so the user can
+	// confirm they pasted the sermon they meant to before committing to a run.
+	useEffect(() => {
+		const videoId = extractVideoId(url)
+
+		if (!videoId || resolvedId.current === videoId) {
+			return
+		}
+
+		const controller = new AbortController()
+
+		const timer = setTimeout(async () => {
+			setMetaLoading(true)
+
+			try {
+				const response = await fetch(
+					`/api/video?url=${encodeURIComponent(url.trim())}`,
+					{ signal: controller.signal },
+				)
+
+				if (!response.ok) {
+					throw new Error('lookup failed')
+				}
+
+				resolvedId.current = videoId
+				setMeta((await response.json()) as VideoMetaType)
+				setError(null)
+			} catch {
+				if (!controller.signal.aborted) {
+					setMeta(null)
+				}
+			} finally {
+				if (!controller.signal.aborted) {
+					setMetaLoading(false)
+				}
+			}
+		}, META_DEBOUNCE_MS)
+
+		return () => {
+			clearTimeout(timer)
+			controller.abort()
+		}
+	}, [url])
+
+	useEffect(() => {
+		window.scrollTo({ top: 0 })
+	}, [phase])
+
+	useEffect(() => () => abortRef.current?.abort(), [])
+
+	function handleUrlChange(next: string) {
+		setUrl(next)
+
+		const videoId = extractVideoId(next)
+
+		if (videoId !== resolvedId.current) {
+			setMeta(null)
+		}
+
+		if (!videoId) {
+			resolvedId.current = null
+			setMetaLoading(false)
+		}
+	}
+
+	function applyEvent(event: PipelineEventType) {
+		switch (event.type) {
+			case 'step':
+				setSteps(current => ({
+					...current,
+					[event.step]: { ...current[event.step], state: event.state },
+				}))
+				break
+			case 'detail':
+				setSteps(current => ({
+					...current,
+					[event.step]: { ...current[event.step], detail: event.detail },
+				}))
+				break
+			case 'meta':
+				resolvedId.current = event.meta.videoId
+				setMeta(event.meta)
+				break
+			case 'complete':
+				setNotes(event.notes)
+				setPhase('done')
+				break
+			case 'error':
+				setError({ code: event.code, message: event.message })
+				setPhase('idle')
+				break
+		}
+	}
+
+	async function handleSubmit() {
+		if (!extractVideoId(url)) {
+			setError({
+				code: 'invalid_url',
+				message: "That doesn't look like a YouTube link.",
+			})
+			return
+		}
+
+		const controller = new AbortController()
+		abortRef.current = controller
+
+		setError(null)
+		setNotes(null)
+		setSteps(freshSteps())
+		setPhase('working')
+
+		try {
+			const response = await fetch('/api/transcript', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Accept: 'application/x-ndjson',
+				},
+				body: JSON.stringify({ url: url.trim() }),
+				signal: controller.signal,
+			})
+
+			if (!response.ok || !response.body) {
+				const body = await response.json().catch(() => null)
+
+				throw new Error(body?.error ?? 'Request failed')
+			}
+
+			await readEvents(response.body, applyEvent)
+		} catch (caught) {
+			if (controller.signal.aborted) {
+				return
+			}
+
+			setError({
+				code: 'unknown',
+				message:
+					caught instanceof Error && caught.message !== 'Request failed'
+						? caught.message
+						: 'Something went wrong while taking notes. Please try again.',
+			})
+			setPhase('idle')
+		}
+	}
+
+	function handleCancel() {
+		abortRef.current?.abort()
+		abortRef.current = null
+		setPhase('idle')
+		setSteps(freshSteps())
+	}
+
+	function handleReset() {
+		abortRef.current?.abort()
+		abortRef.current = null
+		resolvedId.current = null
+		setUrl('')
+		setMeta(null)
+		setNotes(null)
+		setError(null)
+		setSteps(freshSteps())
+		setPhase('idle')
+	}
+
+	if (phase === 'done' && notes) {
+		return (
+			<main className="flex-1">
+				<NotesView notes={notes} meta={meta} onReset={handleReset} />
+			</main>
+		)
+	}
+
+	return (
+		<main className="ambient-light grain relative flex flex-1 flex-col">
+			<Header />
+
+			{phase === 'working' ? (
+				<ProgressView steps={steps} meta={meta} onCancel={handleCancel} />
+			) : (
+				<TakeNotesForm
+					url={url}
+					onUrlChange={handleUrlChange}
+					onSubmit={handleSubmit}
+					onClear={handleReset}
+					canSubmit={extractVideoId(url) !== null}
+					meta={meta}
+					metaLoading={metaLoading}
+					error={error}
+				/>
+			)}
+		</main>
+	)
+}
+
+function Header() {
+	return (
+		<header className="relative z-10 flex items-center gap-2.5 px-6 py-6 sm:px-8">
+			<span className="bg-accent-strong shadow-accent/25 flex size-7 items-center justify-center rounded-lg text-white shadow-md">
+				<LampMark className="size-4" />
+			</span>
+			<span className="font-serif text-[0.9375rem] font-medium tracking-tight">
+				Sermon Notes
+			</span>
+		</header>
+	)
+}
+
+/** Reads the newline-delimited progress stream, one event at a time. */
+async function readEvents(
+	body: ReadableStream<Uint8Array>,
+	onEvent: (event: PipelineEventType) => void,
+) {
+	const reader = body.getReader()
+	const decoder = new TextDecoder()
+	let buffer = ''
+
+	const flush = (chunk: string) => {
+		const trimmed = chunk.trim()
+
+		if (!trimmed) {
+			return
+		}
+
+		try {
+			onEvent(JSON.parse(trimmed) as PipelineEventType)
+		} catch {
+			// A partial or malformed line is not worth failing the whole run over.
+		}
+	}
+
+	while (true) {
+		const { done, value } = await reader.read()
+
+		if (done) {
+			break
+		}
+
+		buffer += decoder.decode(value, { stream: true })
+
+		const lines = buffer.split('\n')
+		buffer = lines.pop() ?? ''
+
+		lines.forEach(flush)
+	}
+
+	flush(buffer)
 }
