@@ -1,11 +1,14 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { createContext, useContext, useMemo, useState } from 'react'
 import type { AccountStateType } from '@/app/types'
 
 type AccountContextType = AccountStateType & {
 	/** Adopt the state an auth route just returned, with no extra round trip. */
 	apply: (next: AccountStateType) => void
+	/** A run spent or returned a token. Everything else about the account holds. */
+	setTokenBalance: (tokenBalance: number) => void
 	signOut: () => Promise<void>
 }
 
@@ -23,6 +26,7 @@ export function AccountProvider({
 	children: React.ReactNode
 }) {
 	const [state, setState] = useState<AccountStateType>(initial)
+	const router = useRouter()
 
 	// `useState` reads its argument once, so without this the provider keeps
 	// whatever it was mounted with for the life of the tab. A session that
@@ -42,15 +46,30 @@ export function AccountProvider({
 		() => ({
 			...state,
 			apply: setState,
+			setTokenBalance: tokenBalance =>
+				setState(current =>
+					current.account
+						? { ...current, account: { ...current.account, tokenBalance } }
+						: current,
+				),
 			signOut: async () => {
 				const response = await fetch('/api/auth/logout', { method: 'POST' })
 
 				if (response.ok) {
 					setState((await response.json()) as AccountStateType)
 				}
+
+				// Every screen but the home page belongs to an account, and the
+				// server only turns people away on a fresh request. Signing out
+				// while standing on one of them would otherwise leave an empty
+				// shell behind, so leaving is part of signing out.
+				//
+				// `replace`, not `push`: going back to a page that will bounce you
+				// is not going back.
+				router.replace('/')
 			},
 		}),
-		[state],
+		[state, router],
 	)
 
 	return (

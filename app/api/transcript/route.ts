@@ -194,16 +194,18 @@ function isPreviewComplete(preview: SermonNotesType): boolean {
  * A run that produced nothing should not cost anything. The spend happens up
  * front — that is what keeps it atomic — so the failure path hands it back.
  */
-async function refund(grant: GrantType | null) {
+async function refund(grant: GrantType | null): Promise<number | null> {
 	if (!grant) {
-		return
+		return null
 	}
 
 	try {
-		await refundGeneration(grant)
+		return await refundGeneration(grant)
 	} catch (error) {
 		// Never let a failed refund mask the failure that caused it.
 		console.error('refund failed', error)
+
+		return null
 	}
 }
 
@@ -290,6 +292,13 @@ function streamSermonNotes(options: RunOptionsType) {
 				}
 			}
 
+			// The token came out of the balance before any of this started, so say
+			// so immediately rather than leaving the header a step behind until the
+			// next page load.
+			if (options.grant?.balance !== null && options.grant) {
+				send({ type: 'balance', tokenBalance: options.grant.balance })
+			}
+
 			// Deliberately not awaited: returning a promise from `start` would hold
 			// the response back until the whole pipeline finished.
 			performRun(options, emit)
@@ -311,7 +320,11 @@ function streamSermonNotes(options: RunOptionsType) {
 				.catch(async error => {
 					console.error(error)
 
-					await refund(options.grant)
+					const restored = await refund(options.grant)
+
+					if (restored !== null) {
+						send({ type: 'balance', tokenBalance: restored })
+					}
 
 					send({ type: 'error', ...describeError(error) })
 				})

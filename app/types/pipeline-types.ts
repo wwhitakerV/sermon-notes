@@ -44,6 +44,12 @@ export type PipelineEventType =
 	 * never put on the wire. They fetch them from `/api/notes/[videoId]` once
 	 * they have an account.
 	 */
+	/**
+	 * The run just spent a token, or handed one back. The header shows the
+	 * balance on every screen, so it has to hear about it — the stream is the
+	 * only thing that knows.
+	 */
+	| { type: 'balance'; tokenBalance: number }
 	| { type: 'locked'; videoId: string }
 	/**
 	 * The run has finished and the notes are cached. Sent after `locked`,

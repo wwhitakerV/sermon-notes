@@ -88,7 +88,7 @@ export async function markIntentFailed(
  */
 export async function rememberCard(
 	userId: string,
-	intent: Stripe.PaymentIntent,
+	intent: Stripe.PaymentIntent | Stripe.SetupIntent,
 ): Promise<void> {
 	const paymentMethodId =
 		typeof intent.payment_method === 'string'
@@ -99,7 +99,13 @@ export async function rememberCard(
 		return
 	}
 
-	const method = await getStripe().paymentMethods.retrieve(paymentMethodId)
+	const stripe = getStripe()
+	const method = await stripe.paymentMethods.retrieve(paymentMethodId)
+
+	const [previous] = await getDb()
+		.select({ id: users.stripePaymentMethodId })
+		.from(users)
+		.where(eq(users.id, userId))
 
 	await getDb()
 		.update(users)
@@ -109,6 +115,34 @@ export async function rememberCard(
 			cardLast4: method.card?.last4 ?? null,
 		})
 		.where(eq(users.id, userId))
+
+	// Replacing a card should not quietly leave the old one attached to the
+	// customer, where it would keep showing up in Stripe and could still be
+	// charged by mistake.
+	if (previous?.id && previous.id !== paymentMethodId) {
+		await stripe.paymentMethods
+			.detach(previous.id)
+			.catch(error => console.error('detaching the old card failed', error))
+	}
+}
+
+/** Takes the card off the account and off the Stripe customer. */
+export async function forgetCard(userId: string): Promise<void> {
+	const [row] = await getDb()
+		.select({ id: users.stripePaymentMethodId })
+		.from(users)
+		.where(eq(users.id, userId))
+
+	await getDb()
+		.update(users)
+		.set({ stripePaymentMethodId: null, cardBrand: null, cardLast4: null })
+		.where(eq(users.id, userId))
+
+	if (row?.id) {
+		await getStripe()
+			.paymentMethods.detach(row.id)
+			.catch(error => console.error('detaching the card failed', error))
+	}
 }
 
 export function intentMetadata(

@@ -4,6 +4,7 @@ import {
 	DEVICE_COOKIE_MAX_AGE,
 } from '@/app/lib/auth/device-cookie'
 import { SESSION_COOKIE } from '@/app/lib/auth/session-cookie'
+import { signInUrl } from '@/app/lib/return-to'
 import { signValue, unsignValue } from '@/app/lib/auth/signed-value'
 
 /**
@@ -39,9 +40,15 @@ export function proxy(request: NextRequest) {
 		needsAccount(request.nextUrl.pathname) &&
 		!request.cookies.get(SESSION_COOKIE)
 
+	const home = () =>
+		new URL(
+			signInUrl(request.nextUrl.pathname + request.nextUrl.search),
+			request.url,
+		)
+
 	if (unsignValue(request.cookies.get(DEVICE_COOKIE)?.value)) {
 		return turnAway
-			? NextResponse.redirect(new URL('/', request.url))
+			? NextResponse.redirect(home())
 			: NextResponse.next()
 	}
 
@@ -57,7 +64,7 @@ export function proxy(request: NextRequest) {
 	// Redirected or not, the visitor still leaves with a device id — it is what
 	// their free video is tracked against.
 	const response = turnAway
-		? NextResponse.redirect(new URL('/', request.url))
+		? NextResponse.redirect(home())
 		: NextResponse.next({ request })
 
 	response.cookies.set({

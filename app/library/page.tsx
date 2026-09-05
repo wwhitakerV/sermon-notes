@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { SiteHeader } from '@/app/components/site-header'
 import { currentUser } from '@/app/lib/auth/session'
+import { signInUrl } from '@/app/lib/return-to'
 import { listLibrary } from '@/app/lib/notes-cache'
 import { LibraryList } from './library-list'
 
@@ -15,7 +16,7 @@ export default async function LibraryPage() {
 	// The authority, not the proxy: a session cookie can be present and still be
 	// expired or forged. A signed-out visitor belongs on the home page.
 	if (!user) {
-		redirect('/')
+		redirect(signInUrl('/library'))
 	}
 
 	return (

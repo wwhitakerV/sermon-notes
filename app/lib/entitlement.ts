@@ -9,6 +9,11 @@ export type GrantType = {
 	userId: string | null
 	deviceId: string | null
 	conversionId: string
+	/**
+	 * What the account has left, straight from the statement that spent it.
+	 * Null when nothing was spent — a free video, or notes already owned.
+	 */
+	balance: number | null
 }
 
 export type DeniedReasonType = 'auth_required' | 'payment_required'
@@ -77,6 +82,7 @@ export async function claimGeneration({
 				userId: user.id,
 				deviceId,
 				videoId,
+				balance: spent[0].balance,
 			})
 		}
 
@@ -106,14 +112,20 @@ export async function claimGeneration({
  * Spending up front is what keeps the guards atomic; this is the other half of
  * that bargain, so a broken transcript never costs a real dollar.
  */
-export async function refundGeneration(grant: GrantType): Promise<void> {
+export async function refundGeneration(
+	grant: GrantType,
+): Promise<number | null> {
 	const db = getDb()
+	let balance: number | null = null
 
 	if (grant.source === 'token' && grant.userId) {
-		await db
+		const [row] = await db
 			.update(users)
 			.set({ tokenBalance: sql`${users.tokenBalance} + 1` })
 			.where(eq(users.id, grant.userId))
+			.returning({ balance: users.tokenBalance })
+
+		balance = row?.balance ?? null
 	}
 
 	if (grant.source === 'free') {
@@ -136,6 +148,8 @@ export async function refundGeneration(grant: GrantType): Promise<void> {
 		.update(conversions)
 		.set({ refunded: true })
 		.where(eq(conversions.id, grant.conversionId))
+
+	return balance
 }
 
 /**
@@ -159,7 +173,11 @@ async function recordGrant({
 	userId,
 	deviceId,
 	videoId,
-}: Omit<GrantType, 'conversionId'> & { videoId: string }): Promise<ClaimType> {
+	balance = null,
+}: Omit<GrantType, 'conversionId' | 'balance'> & {
+	videoId: string
+	balance?: number | null
+}): Promise<ClaimType> {
 	const [row] = await getDb()
 		.insert(conversions)
 		.values({ userId, deviceId, videoId, source })
@@ -167,6 +185,6 @@ async function recordGrant({
 
 	return {
 		ok: true,
-		grant: { source, userId, deviceId, conversionId: row.id },
+		grant: { source, userId, deviceId, conversionId: row.id, balance },
 	}
 }

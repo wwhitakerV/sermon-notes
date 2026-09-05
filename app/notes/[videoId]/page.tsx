@@ -5,6 +5,7 @@ import { SiteHeader } from '@/app/components/site-header'
 import { ArrowRightIcon } from '@/app/components/icons'
 import { currentUser } from '@/app/lib/auth/session'
 import { ownsVideo, readCachedNotes } from '@/app/lib/notes-cache'
+import { signInUrl } from '@/app/lib/return-to'
 import { SavedNotes } from './saved-notes'
 
 export const metadata: Metadata = {
@@ -20,7 +21,7 @@ export default async function SavedNotesPage({
 	// Saved notes belong to an account. Anyone without one — including someone
 	// following a shared link — goes to the home page to start their own.
 	if (!user) {
-		redirect('/')
+		redirect(signInUrl(`/notes/${videoId}`))
 	}
 
 	// Holding the video id is not the same as having paid for the notes, so

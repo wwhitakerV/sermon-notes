@@ -61,7 +61,7 @@ export default function Home() {
 	const [preview, setPreview] = useState(false)
 	const [revealError, setRevealError] = useState<string | null>(null)
 
-	const { account, savedCard, apply } = useAccount()
+	const { account, savedCard, apply, setTokenBalance } = useAccount()
 
 	const resolvedId = useRef<string | null>(null)
 	/**
@@ -72,6 +72,8 @@ export default function Home() {
 	const accountRef = useRef(account)
 	const lockedVideoRef = useRef<string | null>(null)
 	const notesArrivedRef = useRef(false)
+	/** Guards the two triggers below from both firing for the same run. */
+	const revealStartedRef = useRef(false)
 	/** The sermon this run is about, for the address bar. */
 	const runVideoRef = useRef<string | null>(null)
 	/** The run has finished and the full notes are collectable. */
@@ -126,6 +128,21 @@ export default function Home() {
 	useEffect(() => {
 		accountRef.current = account
 	}, [account])
+
+	useEffect(() => {
+		if (!account || !preview || !readyRef.current) {
+			return
+		}
+
+		const videoId = lockedVideoRef.current
+
+		if (videoId) {
+			startReveal(videoId)
+		}
+		// `startReveal` is recreated every render and guards itself, so it is
+		// deliberately not a dependency.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [account, preview])
 
 	useEffect(() => {
 		// Not on `done`: by then the notes are already on screen and the reader may
@@ -231,13 +248,18 @@ export default function Home() {
 					)
 				}
 				break
+			case 'balance':
+				// The header carries the balance on every screen, so it follows the
+				// run rather than waiting for the next page load.
+				setTokenBalance(event.tokenBalance)
+				break
 			case 'ready':
 				// The notes are cached now. If they signed up while the run was
 				// still going, this is what releases them.
 				readyRef.current = true
 
 				if (accountRef.current && lockedVideoRef.current) {
-					void revealNotes(event.videoId)
+					startReveal(event.videoId)
 				}
 				break
 			case 'locked':
@@ -365,6 +387,7 @@ export default function Home() {
 		lockedVideoRef.current = null
 		notesArrivedRef.current = false
 		readyRef.current = false
+		revealStartedRef.current = false
 		runVideoRef.current = null
 		setSteps(freshSteps())
 		setPhase('idle')
@@ -379,6 +402,15 @@ export default function Home() {
 	 * Fetches the notes a finished run withheld, and replays them frame by frame
 	 * so they arrive with the same animation a live generation would have given.
 	 */
+	function startReveal(videoId: string) {
+		if (revealStartedRef.current) {
+			return
+		}
+
+		revealStartedRef.current = true
+		void revealNotes(videoId)
+	}
+
 	async function revealNotes(videoId: string) {
 		const controller = new AbortController()
 		abortRef.current = controller
@@ -414,22 +446,6 @@ export default function Home() {
 					? caught.message
 					: 'We could not open your notes just now.',
 			)
-		}
-	}
-
-	/**
-	 * Signing up while the notes are being written. If the run has already
-	 * finished behind the prompt, they open immediately; if it has not, the
-	 * `locked` event will find an account waiting for it.
-	 */
-	function handleRevealed(next: AccountStateType) {
-		apply(next)
-		accountRef.current = next.account
-
-		// Only collect once the run has actually finished writing. If it has not,
-		// the `ready` event will find the account waiting for it.
-		if (readyRef.current && lockedVideoRef.current) {
-			void revealNotes(lockedVideoRef.current)
 		}
 	}
 
@@ -471,11 +487,7 @@ export default function Home() {
 									}}
 								/>
 							) : (
-								<AuthPrompt
-									variant="reveal"
-									onSuccess={handleRevealed}
-									inline
-								/>
+								<AuthPrompt variant="reveal" onSuccess={apply} inline />
 							)
 						) : null
 					}

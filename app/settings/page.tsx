@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { SiteHeader } from '@/app/components/site-header'
 import { currentUser } from '@/app/lib/auth/session'
+import { signInUrl } from '@/app/lib/return-to'
 import { SettingsPanel } from './settings-panel'
 
 export const metadata: Metadata = {
@@ -12,7 +13,7 @@ export default async function SettingsPage() {
 	const user = await currentUser()
 
 	if (!user) {
-		redirect('/')
+		redirect(signInUrl('/settings'))
 	}
 
 	return (

@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useRef, useState } from 'react'
 import type { AccountStateType } from '@/app/types'
 import { AlertIcon, ArrowRightIcon, CloseIcon } from './icons'
@@ -22,19 +23,33 @@ type Props = {
 	inline?: boolean
 }
 
-const COPY: Record<VariantType, { title: string; body: string }> = {
+type CopyType = { title: string; body: string }
+
+/**
+ * Keyed by what the form is about to do, not by where it was opened from.
+ *
+ * The heading used to come from the variant while the button came from the
+ * mode, so toggling to "create one" left "Welcome back" sitting above a
+ * "Create free account" button. One source, one message.
+ */
+const CREATING: Record<VariantType, CopyType> = {
 	unlock: {
 		title: 'Create your free account',
-		body: 'That was your free video. Accounts are free — after that it is $1 a video.',
-	},
-	signin: {
-		title: 'Welcome back',
-		body: 'Sign in to reach your library and your tokens.',
+		body: 'That was your free sermon. The account is free — sermons after this are $1 each.',
 	},
 	reveal: {
 		title: 'Read the rest of these notes',
-		body: 'Create your free account to open the full outline, Scriptures and takeaways — and keep them in your library.',
+		body: 'Create a free account to open the full outline, every Scripture, and the takeaways — and keep them in your library.',
 	},
+	signin: {
+		title: 'Create your free account',
+		body: 'Save sermon notes to your library and use tokens to generate as many as you want.',
+	},
+}
+
+const SIGNING_IN: CopyType = {
+	title: 'Welcome back',
+	body: '',
 }
 
 /**
@@ -58,7 +73,8 @@ export function AuthPrompt({
 
 	const passwordRef = useRef<HTMLInputElement>(null)
 
-	const copy = COPY[variant]
+	const creating = mode === 'create'
+	const copy = creating ? CREATING[variant] : SIGNING_IN
 
 	async function handleSubmit(event: React.FormEvent) {
 		event.preventDefault()
@@ -108,12 +124,10 @@ export function AuthPrompt({
 			<div className="flex items-start gap-4">
 				<div className="min-w-0 flex-1">
 					<h2 className="font-serif text-[1.375rem] leading-tight font-medium tracking-tight text-balance">
-						{mode === 'signin' ? 'Sign in to continue' : copy.title}
+						{copy.title}
 					</h2>
 					<p className="text-ink-muted mt-1.5 text-[0.9375rem] leading-relaxed text-pretty">
-						{mode === 'signin'
-							? 'Enter the password for this email and we will pick up where you left off.'
-							: copy.body}
+						{copy.body}
 					</p>
 				</div>
 
@@ -145,9 +159,7 @@ export function AuthPrompt({
 					type="password"
 					value={password}
 					onChange={setPassword}
-					autoComplete={
-						mode === 'signin' ? 'current-password' : 'new-password'
-					}
+					autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
 					minLength={MIN_PASSWORD_LENGTH}
 				/>
 
@@ -166,26 +178,42 @@ export function AuthPrompt({
 					disabled={busy}
 					className="bg-accent-strong shadow-accent/25 hover:bg-accent focus-visible:ring-accent/40 disabled:bg-paper-sunk disabled:text-ink-faint mt-1 flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-[0.9375rem] font-semibold text-white shadow-lg transition-all duration-200 hover:shadow-xl focus-visible:ring-2 focus-visible:outline-none disabled:shadow-none"
 				>
-					{busy
-						? 'One moment…'
-						: mode === 'signin'
-							? 'Sign in'
-							: 'Create free account'}
+					{busy ? 'One moment…' : creating ? 'Create free account' : 'Sign in'}
 					{!busy && <ArrowRightIcon className="size-4" />}
 				</button>
 			</form>
 
+			{creating && (
+				<p className="text-ink-faint mt-3.5 text-center text-[0.75rem] leading-relaxed text-balance">
+					By creating an account you agree to our{' '}
+					<Link
+						href="/terms"
+						className="hover:text-accent-strong underline underline-offset-2 transition-colors"
+					>
+						Terms
+					</Link>{' '}
+					and{' '}
+					<Link
+						href="/privacy"
+						className="hover:text-accent-strong underline underline-offset-2 transition-colors"
+					>
+						Privacy Policy
+					</Link>
+					.
+				</p>
+			)}
+
 			<p className="text-ink-faint mt-3.5 text-center text-[0.8125rem]">
-				{mode === 'signin' ? 'New here?' : 'Already have an account?'}{' '}
+				{creating ? 'Already have an account?' : 'New here?'}{' '}
 				<button
 					type="button"
 					onClick={() => {
-						setMode(mode === 'signin' ? 'create' : 'signin')
+						setMode(creating ? 'signin' : 'create')
 						setError(null)
 					}}
 					className="hover:text-accent-strong underline underline-offset-2 transition-colors"
 				>
-					{mode === 'signin' ? 'Create one' : 'Sign in'}
+					{creating ? 'Sign in' : 'Create one'}
 				</button>
 			</p>
 		</div>

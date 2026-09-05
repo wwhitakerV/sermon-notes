@@ -1,7 +1,9 @@
+import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { Fraunces, Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { AccountProvider } from './components/account-provider'
+import { ReturnToPrompt } from './components/return-to-prompt'
 import { SiteFooter } from './components/site-footer'
 import { VideoDialogProvider } from './components/video-dialog'
 import { readAccountState } from './lib/account-state'
@@ -38,6 +40,10 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
 					<VideoDialogProvider>
 						{children}
 						<SiteFooter />
+
+						<Suspense>
+							<ReturnToPrompt />
+						</Suspense>
 					</VideoDialogProvider>
 				</AccountProvider>
 			</body>
