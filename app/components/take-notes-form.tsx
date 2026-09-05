@@ -53,7 +53,7 @@ export function TakeNotesForm({
 	}
 
 	return (
-		<div className="mx-auto w-full max-w-2xl px-6 pt-10 pb-24 sm:pt-16">
+		<div className="mx-auto w-full max-w-2xl px-6 pt-16 pb-24 sm:pt-24">
 			<div className="animate-rise text-center">
 				<h1 className="font-serif text-4xl leading-[1.08] font-medium tracking-tight text-balance sm:text-[3.25rem]">
 					Turn any sermon into{' '}
@@ -68,8 +68,8 @@ export function TakeNotesForm({
 				</h1>
 
 				<p className="text-ink-muted mx-auto mt-5 max-w-md text-[1.0625rem] leading-relaxed text-pretty">
-					Paste a YouTube link and get notes you&rsquo;ll actually come back
-					to. About a minute per sermon.
+					Paste a YouTube link and get notes you&rsquo;ll actually come back to.
+					About a minute per sermon.
 				</p>
 			</div>
 
