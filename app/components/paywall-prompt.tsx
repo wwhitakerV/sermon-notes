@@ -13,9 +13,15 @@ import type { PackType } from '@/app/lib/token-packs'
 import type { AccountStateType, SavedCardType } from '@/app/types'
 import { AlertIcon, CardIcon, CheckIcon, CloseIcon } from './icons'
 
-const stripePromise = loadStripe(
-	process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '',
-)
+/**
+ * Read at module scope because Next inlines `NEXT_PUBLIC_*` at build time — it
+ * is not read from the environment when the page runs. Setting it on the host
+ * after a deploy therefore changes nothing until the app is rebuilt, and an
+ * empty key makes Stripe answer 401 and the card form quietly collapse.
+ */
+const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+
+const stripePromise = publishableKey ? loadStripe(publishableKey) : null
 
 /** Stripe's fields, wearing this app's clothes. */
 const appearance: StripeElementsOptions['appearance'] = {
@@ -118,15 +124,24 @@ export function PaywallPrompt({
 				})}
 			</div>
 
-			{savedCard ? (
-				<SavedCardCheckout
-					pack={pack}
-					savedCard={savedCard}
-					onPurchased={onPurchased}
-				/>
+			{!publishableKey ? (
+				<InlineError message="Card payments are not configured on this deployment." />
 			) : (
+				/*
+				 * Both paths sit inside the provider. The saved-card path calls
+				 * `useStripe` to answer a 3D Secure challenge, and that hook throws
+				 * outright when there is no Elements context above it.
+				 */
 				<Elements stripe={stripePromise} options={options}>
-					<NewCardCheckout pack={pack} onPurchased={onPurchased} />
+					{savedCard ? (
+						<SavedCardCheckout
+							pack={pack}
+							savedCard={savedCard}
+							onPurchased={onPurchased}
+						/>
+					) : (
+						<NewCardCheckout pack={pack} onPurchased={onPurchased} />
+					)}
 				</Elements>
 			)}
 

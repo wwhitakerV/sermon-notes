@@ -6,6 +6,15 @@ import type { ErrorCodeType, VideoMetaType } from '@/app/types'
 import { formatSeconds } from '@/app/lib/youtube'
 import { AlertIcon, ArrowRightIcon, CloseIcon, YouTubeIcon } from './icons'
 
+/**
+ * Something to paste for the many people who agree with the headline and then
+ * realise they do not have a sermon link to hand. Already in the cache, so it
+ * comes back fast and costs nothing to serve.
+ */
+const SAMPLE_URL = 'https://www.youtube.com/watch?v=eSXzUDh7o60'
+
+const URL_FIELD_ID = 'sermon-url'
+
 const INCLUDES = [
 	'Main idea',
 	'Sermon outline',
@@ -58,10 +67,9 @@ export function TakeNotesForm({
 					.
 				</h1>
 
-				<p className="text-ink-muted mx-auto mt-5 max-w-lg text-[1.0625rem] leading-relaxed text-pretty">
-					Paste a YouTube sermon and get the main teaching, Scripture
-					references, practical applications, and reflection questions —
-					organized so you can actually study it later.
+				<p className="text-ink-muted mx-auto mt-5 max-w-md text-[1.0625rem] leading-relaxed text-pretty">
+					Paste a YouTube link and get notes you&rsquo;ll actually come back
+					to. About a minute per sermon.
 				</p>
 			</div>
 
@@ -78,13 +86,33 @@ export function TakeNotesForm({
 					) : metaLoading ? (
 						<PreviewSkeleton />
 					) : (
-						<label className="block px-3 pt-3 pb-1">
-							<span className="text-ink-faint text-[0.6875rem] font-medium tracking-[0.14em] uppercase">
-								Paste a YouTube sermon
-							</span>
+						<div className="px-3 pt-3 pb-1">
+							{/*
+							 * The label and the sample button are siblings rather than
+							 * nested: a label may not contain another interactive
+							 * control, and clicking one inside it fires both.
+							 */}
+							<div className="flex items-center justify-between gap-3">
+								<label
+									htmlFor={URL_FIELD_ID}
+									className="text-ink-faint text-[0.6875rem] font-medium tracking-[0.14em] uppercase"
+								>
+									Paste a YouTube sermon
+								</label>
+
+								<button
+									type="button"
+									onClick={() => onUrlChange(SAMPLE_URL)}
+									className="text-accent-strong hover:text-accent text-[0.75rem] font-medium underline underline-offset-2 transition-colors"
+								>
+									or try one
+								</button>
+							</div>
+
 							<div className="mt-2 flex items-center gap-3">
 								<YouTubeIcon className="text-ink-faint size-5 shrink-0" />
 								<input
+									id={URL_FIELD_ID}
 									ref={inputRef}
 									value={url}
 									onChange={event => onUrlChange(event.target.value)}
@@ -93,11 +121,10 @@ export function TakeNotesForm({
 									autoComplete="off"
 									spellCheck={false}
 									autoFocus
-									aria-label="YouTube sermon URL"
 									className="placeholder:text-ink-faint/70 w-full bg-transparent py-1 text-[0.9375rem] outline-none"
 								/>
 							</div>
-						</label>
+						</div>
 					)}
 
 					<button
@@ -121,7 +148,11 @@ export function TakeNotesForm({
 				</p>
 			)}
 
-			<p className="text-ink-faint mt-5 text-center text-[0.8125rem] leading-relaxed text-balance">
+			<p className="text-ink-muted mt-5 text-center text-[0.8125rem] leading-relaxed text-balance">
+				First sermon free. $1 each after that — no subscription.
+			</p>
+
+			<p className="text-ink-faint mt-2 text-center text-[0.8125rem] leading-relaxed text-balance">
 				Works best with sermons, Bible studies, and Christian teaching videos
 				from 30 minutes to an hour or more.
 			</p>

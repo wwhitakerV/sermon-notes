@@ -80,3 +80,30 @@ export function hasCompleteSection(notes: SermonNotesType): boolean {
 		section => section.title.trim().length > 0 && section.notes.length > 0,
 	)
 }
+
+/**
+ * Drops repeats while keeping the first of each and the original order.
+ *
+ * A preacher quoting the same verse twice is normal, and the model records it
+ * faithfully — which is fine as data and wrong on screen, where it renders the
+ * same chip twice and hands React two children with the same key.
+ */
+export function dedupeBy<T>(items: T[], keyOf: (item: T) => string): T[] {
+	const seen = new Set<string>()
+
+	return items.filter(item => {
+		const key = keyOf(item)
+
+		if (seen.has(key)) {
+			return false
+		}
+
+		seen.add(key)
+
+		return true
+	})
+}
+
+/** The two lists that can carry repeats, in the shape the page renders. */
+export const scriptureKey = (reference: string, timestamp = '') =>
+	`${reference.trim()}@${timestamp.trim()}`.toLowerCase()

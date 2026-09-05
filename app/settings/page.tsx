@@ -5,7 +5,7 @@ import { currentUser } from '@/app/lib/auth/session'
 import { SettingsPanel } from './settings-panel'
 
 export const metadata: Metadata = {
-	title: 'Settings — Sermon Notes',
+	title: 'Settings — Sermon Drop',
 }
 
 export default async function SettingsPage() {

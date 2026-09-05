@@ -36,8 +36,10 @@ import {
 import { generateSermonNotes } from './generate-sermon-notes'
 import {
 	coalesceNotes,
+	dedupeBy,
 	hasCompleteSection,
 	hasRenderableNotes,
+	scriptureKey,
 } from '@/app/lib/partial-notes'
 
 const NDJSON = 'application/x-ndjson'
@@ -451,15 +453,21 @@ function organizeNotes(notes: SermonNotesType): SermonNotesType {
 		mainIdea: notes.mainIdea.trim(),
 		// Stored clean, so what is cached for everyone after this reader is not
 		// carrying the transcript's brackets around.
-		mainTexts: notes.mainTexts.map(entry => ({
-			...entry,
-			timestamp: formatTimestamp(entry.timestamp),
-		})),
+		mainTexts: dedupeBy(
+			notes.mainTexts.map(entry => ({
+				...entry,
+				timestamp: formatTimestamp(entry.timestamp),
+			})),
+			entry => scriptureKey(entry.reference, entry.timestamp),
+		),
 		sections: notes.sections.map(section => ({
 			...section,
 			timestamp: formatTimestamp(section.timestamp),
 			notes: section.notes.map(note => note.trim()).filter(Boolean),
-			scriptures: section.scriptures.map(s => s.trim()).filter(Boolean),
+			scriptures: dedupeBy(
+				section.scriptures.map(s => s.trim()).filter(Boolean),
+				scriptureKey,
+			),
 			application: section.application?.trim() || undefined,
 		})),
 		// Normalised before the duplicate check, not after: otherwise the same

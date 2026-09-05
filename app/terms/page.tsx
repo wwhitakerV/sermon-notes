@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { LegalPage } from '@/app/components/legal-page'
 
-export const metadata: Metadata = { title: 'Terms — Sermon Notes' }
+export const metadata: Metadata = { title: 'Terms — Sermon Drop' }
 
 export default function TermsPage() {
 	return (
@@ -21,7 +21,7 @@ export default function TermsPage() {
 					content: (
 						<>
 							<p>
-								Sermon Notes takes a YouTube video you choose, reads its
+								Sermon Drop takes a YouTube video you choose, reads its
 								captions, and uses an AI model to write study notes from them.
 							</p>
 							<p>

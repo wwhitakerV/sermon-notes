@@ -13,7 +13,7 @@ export function SiteFooter() {
 		<footer className="border-line no-print mt-auto border-t">
 			<div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-4 px-5 py-6 sm:flex-row sm:px-6">
 				<p className="text-ink-faint text-[0.8125rem]">
-					© {new Date().getFullYear()} Sermon Notes
+					© {new Date().getFullYear()} Sermon Drop
 				</p>
 
 				<nav className="text-ink-muted flex items-center gap-5 text-[0.8125rem] sm:ml-auto">

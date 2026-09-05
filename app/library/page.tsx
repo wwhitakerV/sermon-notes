@@ -6,7 +6,7 @@ import { listLibrary } from '@/app/lib/notes-cache'
 import { LibraryList } from './library-list'
 
 export const metadata: Metadata = {
-	title: 'Your library — Sermon Notes',
+	title: 'Your library — Sermon Drop',
 }
 
 export default async function LibraryPage() {

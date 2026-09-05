@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- The header mark: the flame on its accent tile, at favicon scale. -->
+  <rect width="32" height="32" rx="8" fill="#b8460a" />
+  <g transform="translate(4 4) scale(1)">
+    <path
+      d="M12 2.5c2.8 3.1 4.2 5.4 4.2 7.4 0 1.6-.7 2.7-1.8 3.4.5-1.6.2-3-1-4.4-.5 1.9-1.5 2.7-2.6 3.7-1.3 1.2-2 2.3-2 3.6a4.2 4.2 0 0 0 8.4 0c0-.5 0-1-.2-1.4a6.9 6.9 0 0 1 2.2 5A7.2 7.2 0 1 1 5.4 14c0-3.6 2.2-7.4 6.6-11.5Z"
+      fill="#ffffff"
+    />
+  </g>
+</svg>

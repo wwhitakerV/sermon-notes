@@ -22,7 +22,7 @@ const fraunces = Fraunces({
 })
 
 export const metadata: Metadata = {
-	title: 'Sermon Notes — Turn any sermon into organized study notes',
+	title: 'Sermon Drop — Turn any sermon into organized study notes',
 	description:
 		'Paste a YouTube sermon and get the main teaching, Scripture references, applications, and reflection questions — organized so you can actually study it later.',
 }

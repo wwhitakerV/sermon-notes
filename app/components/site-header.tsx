@@ -56,13 +56,13 @@ export function SiteHeader({ progress = false, onNewNotes }: Props) {
 				<Link
 					href="/"
 					className="flex shrink-0 items-center gap-2"
-					aria-label="Sermon Notes home"
+					aria-label="Sermon Drop home"
 				>
 					<span className="bg-accent-strong shadow-accent/25 flex size-6 items-center justify-center rounded-md text-white shadow-sm">
 						<LampMark className="size-3.5" />
 					</span>
 					<span className="font-serif hidden text-[0.875rem] font-medium tracking-tight sm:inline">
-						Sermon Notes
+						Sermon Drop
 					</span>
 				</Link>
 

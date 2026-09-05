@@ -7,6 +7,7 @@ import {
 	formatTimestamp,
 	timestampToSeconds,
 } from '@/app/lib/youtube'
+import { dedupeBy, scriptureKey } from '@/app/lib/partial-notes'
 import { YouTubeIcon } from './icons'
 import { NotesActions } from './notes-actions'
 import { useVideoDialog } from './video-dialog'
@@ -71,6 +72,25 @@ export function NotesView({
 	const caretKey = streaming ? leadingEdge(notes) : null
 	const sectionIds = useMemo(
 		() => notes.sections.map((_, index) => `section-${index + 1}`),
+		[notes.sections],
+	)
+
+	// Repeats are dropped here rather than only on the way into the cache, so
+	// notes written before this render correctly without being regenerated.
+	const mainTexts = useMemo(
+		() =>
+			dedupeBy(notes.mainTexts, entry =>
+				scriptureKey(entry.reference, entry.timestamp),
+			),
+		[notes.mainTexts],
+	)
+
+	const sections = useMemo(
+		() =>
+			notes.sections.map(section => ({
+				...section,
+				scriptures: dedupeBy(section.scriptures, scriptureKey),
+			})),
 		[notes.sections],
 	)
 
@@ -187,13 +207,13 @@ export function NotesView({
 						)}
 					</div>
 
-					{notes.mainTexts.length > 0 && (
+					{mainTexts.length > 0 && (
 						<div className="mt-7">
 							<Eyebrow>Main text</Eyebrow>
 							<div className="mt-2.5 flex flex-wrap items-center gap-2">
-								{notes.mainTexts.map(text => (
+								{mainTexts.map((text, index) => (
 									<span
-										key={`${text.reference}-${text.timestamp}`}
+										key={`${text.reference}-${text.timestamp}-${index}`}
 										className="border-accent/20 bg-accent-tint text-accent-strong inline-flex items-center gap-2 rounded-full border py-1 pr-1 pl-3.5"
 									>
 										<span className="font-serif text-[0.9375rem]">
@@ -244,7 +264,7 @@ export function NotesView({
 							}
 						>
 						<div>
-							{notes.sections.map((section, index) => (
+							{sections.map((section, index) => (
 								<section
 									key={sectionIds[index]}
 									id={sectionIds[index]}
@@ -276,9 +296,9 @@ export function NotesView({
 
 									{section.scriptures.length > 0 && (
 										<ul className="mt-3.5 flex flex-wrap gap-1.5">
-											{section.scriptures.map(scripture => (
+											{section.scriptures.map((scripture, index) => (
 												<li
-													key={scripture}
+													key={`${scripture}-${index}`}
 													className="border-line bg-surface text-ink-muted font-serif rounded-md border px-2.5 py-1 text-[0.8125rem]"
 												>
 													{scripture}
