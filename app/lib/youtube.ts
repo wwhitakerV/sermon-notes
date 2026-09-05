@@ -55,10 +55,6 @@ export function extractVideoId(input: string): string | null {
 	return null
 }
 
-export function isLikelyYouTubeUrl(input: string): boolean {
-	return extractVideoId(input) !== null
-}
-
 export function watchUrl(videoId: string): string {
 	return `https://www.youtube.com/watch?v=${videoId}`
 }
@@ -67,32 +63,30 @@ export function thumbnailUrl(videoId: string): string {
 	return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
 }
 
+/** `H:MM:SS` or `MM:SS`, wherever it sits in the string. */
+const CLOCK = /(\d{1,3}):([0-5]\d)(?::([0-5]\d))?/
+
 /**
- * Timestamps arrive as `HH:MM:SS` or as a range `HH:MM:SS-HH:MM:SS`.
- * Both resolve to the starting second so a link can jump there.
+ * The first clock time in the string, in seconds.
+ *
+ * Deliberately forgiving about what surrounds it. The transcript is handed to
+ * the model as `[00:04:12] ...` blocks and the prompt asks it to preserve the
+ * timestamps — which it does, brackets and all. Splitting on `:` and trusting
+ * `Number` meant one stray bracket turned every timestamp on the page from a
+ * link back into plain text. A range resolves to where it starts.
  */
 export function timestampToSeconds(timestamp: string): number | null {
-	const start = timestamp.split(/[–—-]/)[0]?.trim()
+	const match = timestamp.match(CLOCK)
 
-	if (!start) {
+	if (!match) {
 		return null
 	}
 
-	const parts = start.split(':').map(part => Number(part))
+	const [, first, second, third] = match
 
-	if (parts.some(part => !Number.isFinite(part))) {
-		return null
-	}
-
-	if (parts.length === 3) {
-		return parts[0] * 3600 + parts[1] * 60 + parts[2]
-	}
-
-	if (parts.length === 2) {
-		return parts[0] * 60 + parts[1]
-	}
-
-	return null
+	return third
+		? Number(first) * 3600 + Number(second) * 60 + Number(third)
+		: Number(first) * 60 + Number(second)
 }
 
 /** `00:06:36` reads better as `6:36`; anything past an hour keeps the hour. */

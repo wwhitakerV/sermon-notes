@@ -39,4 +39,25 @@ export type PipelineEventType =
 	| { type: 'detail'; step: PipelineStepType; detail: string }
 	| { type: 'notes-delta'; notes: PartialSermonNotesType }
 	| { type: 'complete'; notes: SermonNotesType }
+	/**
+	 * The run finished, but the reader is not signed in, so the notes were
+	 * never put on the wire. They fetch them from `/api/notes/[videoId]` once
+	 * they have an account.
+	 */
+	| { type: 'locked'; videoId: string }
+	/**
+	 * The run has finished and the notes are cached. Sent after `locked`,
+	 * because the gate now goes up as soon as the free slice is written — long
+	 * before there is anything at `/api/notes/[videoId]` to collect.
+	 */
+	| { type: 'ready'; videoId: string }
 	| { type: 'error'; code: ErrorCodeType; message: string }
+
+/** Why `/api/transcript` answered 402 instead of starting a run. */
+export type GateReasonType = 'auth_required' | 'payment_required'
+
+export type GateResponseType = {
+	error: string
+	code: GateReasonType
+	balance: number
+}

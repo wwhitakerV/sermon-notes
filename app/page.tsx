@@ -1,15 +1,27 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useAccount } from './components/account-provider'
+import { AuthPrompt } from './components/auth-prompt'
+import { FinishingCard } from './components/finishing-card'
 import { NotesView } from './components/notes-view'
+import { Overlay } from './components/overlay'
+import { PaywallPrompt } from './components/paywall-prompt'
+import { SiteHeader } from './components/site-header'
 import { ProgressView, type StepStatusType } from './components/progress-view'
 import { TakeNotesForm } from './components/take-notes-form'
-import { LampMark } from './components/icons'
-import { coalesceNotes, hasCompleteSection } from './lib/partial-notes'
+import {
+	coalesceNotes,
+	hasCompleteSection,
+	hasRenderableNotes,
+} from './lib/partial-notes'
 import { extractVideoId } from './lib/youtube'
 import { PIPELINE_STEPS } from './types'
 import type {
+	AccountStateType,
 	ErrorCodeType,
+	GateReasonType,
+	GateResponseType,
 	PipelineEventType,
 	PipelineStepType,
 	SermonNotesType,
@@ -19,6 +31,9 @@ import type {
 type PhaseType = 'idle' | 'working' | 'streaming' | 'done'
 type StepMapType = Record<PipelineStepType, StepStatusType>
 type PageErrorType = { code: ErrorCodeType; message: string }
+
+/** Why the server refused this run, and what to put in front of the reader. */
+type GateType = { reason: GateReasonType; balance: number }
 
 const META_DEBOUNCE_MS = 350
 
@@ -42,8 +57,25 @@ export default function Home() {
 	const [steps, setSteps] = useState<StepMapType>(freshSteps)
 	const [notes, setNotes] = useState<SermonNotesType | null>(null)
 	const [error, setError] = useState<PageErrorType | null>(null)
+	const [gate, setGate] = useState<GateType | null>(null)
+	const [preview, setPreview] = useState(false)
+	const [revealError, setRevealError] = useState<string | null>(null)
+
+	const { account, savedCard, apply } = useAccount()
 
 	const resolvedId = useRef<string | null>(null)
+	/**
+	 * The stream ends the moment the notes are ready, long after the render that
+	 * started it — so the handler that receives `locked` reads who is signed in
+	 * from a ref rather than a closure that has gone stale.
+	 */
+	const accountRef = useRef(account)
+	const lockedVideoRef = useRef<string | null>(null)
+	const notesArrivedRef = useRef(false)
+	/** The sermon this run is about, for the address bar. */
+	const runVideoRef = useRef<string | null>(null)
+	/** The run has finished and the full notes are collectable. */
+	const readyRef = useRef(false)
 	const abortRef = useRef<AbortController | null>(null)
 	const handoffRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -90,6 +122,10 @@ export default function Home() {
 			controller.abort()
 		}
 	}, [url])
+
+	useEffect(() => {
+		accountRef.current = account
+	}, [account])
 
 	useEffect(() => {
 		// Not on `done`: by then the notes are already on screen and the reader may
@@ -168,6 +204,8 @@ export default function Home() {
 
 				setNotes(partial)
 
+				notesArrivedRef.current = hasRenderableNotes(partial)
+
 				// Wait for the outline to take shape — the same milestone that
 				// completes the last progress step — so every check is green before
 				// the notes page appears, and it opens with content already in it.
@@ -180,6 +218,49 @@ export default function Home() {
 			case 'complete':
 				setNotes(event.notes)
 				setPhase('done')
+
+				// Finished notes live at a real address. Rewriting the URL rather
+				// than navigating keeps everything on screen exactly where it is —
+				// a route change here would tear the page down and rebuild it — but
+				// a refresh, a bookmark or a shared link now all resolve.
+				if (runVideoRef.current) {
+					window.history.replaceState(
+						null,
+						'',
+						`/notes/${runVideoRef.current}`,
+					)
+				}
+				break
+			case 'ready':
+				// The notes are cached now. If they signed up while the run was
+				// still going, this is what releases them.
+				readyRef.current = true
+
+				if (accountRef.current && lockedVideoRef.current) {
+					void revealNotes(event.videoId)
+				}
+				break
+			case 'locked':
+				// The free slice is written, but the rest of the run is still going
+				// and nothing is cached yet — so this only raises the cut. Even a
+				// reader who has already signed up waits for `ready` rather than
+				// asking for notes that do not exist.
+				lockedVideoRef.current = event.videoId
+
+				if (notesArrivedRef.current) {
+					cancelHandoff()
+					setPreview(true)
+					setPhase('streaming')
+				} else {
+					// Nothing rendered at all — a sermon the model gave no opening
+					// to. Better to say so than to leave a blank page behind a form.
+					setError({
+						code: 'notes_failed',
+						message:
+							'We could not put notes together for this sermon. Please try again.',
+					})
+					setPhase('idle')
+				}
 				break
 			case 'error':
 				cancelHandoff()
@@ -207,6 +288,8 @@ export default function Home() {
 		setSteps(freshSteps())
 		setPhase('working')
 
+		runVideoRef.current = extractVideoId(url)
+
 		try {
 			const response = await fetch('/api/transcript', {
 				method: 'POST',
@@ -217,6 +300,22 @@ export default function Home() {
 				body: JSON.stringify({ url: url.trim() }),
 				signal: controller.signal,
 			})
+
+			// The server owns the entitlement decision, and a 402 is the only thing
+			// that opens a prompt — so the UI can never disagree with the ledger.
+			if (response.status === 402) {
+				const body = (await response
+					.json()
+					.catch(() => null)) as GateResponseType | null
+
+				setGate({
+					reason: body?.code ?? 'auth_required',
+					balance: body?.balance ?? 0,
+				})
+				setPhase('idle')
+
+				return
+			}
 
 			if (!response.ok || !response.body) {
 				const body = await response.json().catch(() => null)
@@ -260,18 +359,126 @@ export default function Home() {
 		setMeta(null)
 		setNotes(null)
 		setError(null)
+		setGate(null)
+		setPreview(false)
+		setRevealError(null)
+		lockedVideoRef.current = null
+		notesArrivedRef.current = false
+		readyRef.current = false
+		runVideoRef.current = null
 		setSteps(freshSteps())
 		setPhase('idle')
+
+		// Back to the form, so put the address bar back with it.
+		if (window.location.pathname !== '/') {
+			window.history.replaceState(null, '', '/')
+		}
+	}
+
+	/**
+	 * Fetches the notes a finished run withheld, and replays them frame by frame
+	 * so they arrive with the same animation a live generation would have given.
+	 */
+	async function revealNotes(videoId: string) {
+		const controller = new AbortController()
+		abortRef.current = controller
+
+		setRevealError(null)
+
+		try {
+			const response = await fetch(`/api/notes/${videoId}?after=preview`, {
+				headers: { Accept: 'application/x-ndjson' },
+				signal: controller.signal,
+			})
+
+			if (!response.ok || !response.body) {
+				const body = await response.json().catch(() => null)
+
+				throw new Error(body?.error ?? 'Request failed')
+			}
+
+			// The wall comes down as the first frames start arriving.
+			setPreview(false)
+			lockedVideoRef.current = null
+
+			await readEvents(response.body, applyEvent)
+		} catch (caught) {
+			if (controller.signal.aborted) {
+				return
+			}
+
+			// Never bounce them back to an empty form: the notes they can already
+			// see are theirs, and the ones they paid for are safe in their library.
+			setRevealError(
+				caught instanceof Error && caught.message !== 'Request failed'
+					? caught.message
+					: 'We could not open your notes just now.',
+			)
+		}
+	}
+
+	/**
+	 * Signing up while the notes are being written. If the run has already
+	 * finished behind the prompt, they open immediately; if it has not, the
+	 * `locked` event will find an account waiting for it.
+	 */
+	function handleRevealed(next: AccountStateType) {
+		apply(next)
+		accountRef.current = next.account
+
+		// Only collect once the run has actually finished writing. If it has not,
+		// the `ready` event will find the account waiting for it.
+		if (readyRef.current && lockedVideoRef.current) {
+			void revealNotes(lockedVideoRef.current)
+		}
+	}
+
+	/**
+	 * Signing up from the gate is the last thing standing between the reader and
+	 * the video they already pasted, so the run picks straight back up.
+	 */
+	function handleUnlocked(next: AccountStateType) {
+		apply(next)
+		setGate(null)
+		void handleSubmit()
 	}
 
 	if ((phase === 'streaming' || phase === 'done') && notes) {
 		return (
 			<main className="flex-1">
+				{/* The reader is still on the route that holds the form, so starting
+				    again is a reset rather than a navigation. */}
+				<SiteHeader
+					progress={phase === 'streaming' && !preview}
+					onNewNotes={handleReset}
+				/>
+
 				<NotesView
 					notes={notes}
 					meta={meta}
 					onReset={handleReset}
-					streaming={phase === 'streaming'}
+					streaming={phase === 'streaming' && !preview}
+					preview={preview}
+					gate={
+						preview ? (
+							account ? (
+								<FinishingCard
+									error={revealError}
+									onRetry={() => {
+										if (lockedVideoRef.current) {
+											void revealNotes(lockedVideoRef.current)
+										}
+									}}
+								/>
+							) : (
+								<AuthPrompt
+									variant="reveal"
+									onSuccess={handleRevealed}
+									inline
+								/>
+							)
+						) : null
+					}
 				/>
 			</main>
 		)
@@ -279,7 +486,7 @@ export default function Home() {
 
 	return (
 		<main className="ambient-light grain relative flex flex-1 flex-col">
-			<Header />
+			<SiteHeader />
 
 			{phase === 'working' ? (
 				<ProgressView steps={steps} meta={meta} onCancel={handleCancel} />
@@ -295,20 +502,37 @@ export default function Home() {
 					error={error}
 				/>
 			)}
-		</main>
-	)
-}
 
-function Header() {
-	return (
-		<header className="relative z-10 flex items-center gap-2.5 px-6 py-6 sm:px-8">
-			<span className="bg-accent-strong shadow-accent/25 flex size-7 items-center justify-center rounded-lg text-white shadow-md">
-				<LampMark className="size-4" />
-			</span>
-			<span className="font-serif text-[0.9375rem] font-medium tracking-tight">
-				Sermon Notes
-			</span>
-		</header>
+			{/*
+			 * Layered over the form rather than replacing it, so the pasted link,
+			 * its preview and every keystroke survive a dismissal, a decline or a
+			 * switched card.
+			 */}
+			{gate && (
+				<Overlay onDismiss={() => setGate(null)}>
+					{gate.reason === 'auth_required' ? (
+						<AuthPrompt
+							variant="unlock"
+							onSuccess={handleUnlocked}
+							onDismiss={() => setGate(null)}
+						/>
+					) : (
+						<PaywallPrompt
+							balance={gate.balance}
+							savedCard={savedCard}
+							// Paying was the last thing between them and the sermon
+							// they already pasted, so the run picks straight back up.
+							onPurchased={next => {
+								apply(next)
+								setGate(null)
+								void handleSubmit()
+							}}
+							onDismiss={() => setGate(null)}
+						/>
+					)}
+				</Overlay>
+			)}
+		</main>
 	)
 }
 

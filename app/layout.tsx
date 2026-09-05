@@ -1,6 +1,10 @@
 import type { Metadata } from 'next'
 import { Fraunces, Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
+import { AccountProvider } from './components/account-provider'
+import { SiteFooter } from './components/site-footer'
+import { VideoDialogProvider } from './components/video-dialog'
+import { readAccountState } from './lib/account-state'
 
 const geistSans = Geist({
 	variable: '--font-geist-sans',
@@ -23,14 +27,19 @@ export const metadata: Metadata = {
 		'Paste a YouTube sermon and get the main teaching, Scripture references, applications, and reflection questions — organized so you can actually study it later.',
 }
 
-export default function RootLayout({ children }: LayoutProps<'/'>) {
+export default async function RootLayout({ children }: LayoutProps<'/'>) {
 	return (
 		<html
 			lang="en"
 			className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
 		>
 			<body className="bg-paper text-ink min-h-full flex flex-col">
-				{children}
+				<AccountProvider initial={await readAccountState()}>
+					<VideoDialogProvider>
+						{children}
+						<SiteFooter />
+					</VideoDialogProvider>
+				</AccountProvider>
 			</body>
 		</html>
 	)

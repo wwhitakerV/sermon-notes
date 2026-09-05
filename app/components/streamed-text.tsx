@@ -38,10 +38,20 @@ function StreamedTextView({ text, animate, caret = false }: Props) {
 	// Held as state rather than a ref because the render itself needs to read
 	// it, and adjusted during render — the sanctioned way to derive state from
 	// a changed prop without bouncing through an effect.
-	const [seen, setSeen] = useState({ text, from: 0, quiet: false })
+	const [seen, setSeen] = useState({ text, from: 0, quiet: false, animate })
 
 	if (seen.text !== text) {
-		setSeen({ text, from: countWords(seen.text), quiet: false })
+		setSeen({ text, from: countWords(seen.text), quiet: false, animate })
+	} else if (seen.animate !== animate) {
+		// The passage is unchanged and the animation has just been switched back
+		// on — which happens when a paywalled preview is unlocked and the rest
+		// resumes writing. Everything on screen counts as already seen, or the
+		// whole document would play its entrance again at once.
+		setSeen(current => ({
+			...current,
+			animate,
+			from: animate ? countWords(text) : current.from,
+		}))
 	}
 
 	// Marks the passage quiet once the model stops adding to it.

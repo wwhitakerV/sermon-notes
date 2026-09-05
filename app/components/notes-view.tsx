@@ -2,21 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { SermonNotesType, VideoMetaType } from '@/app/types'
-import { notesToText } from '@/app/lib/notes-text'
 import {
 	formatSeconds,
 	formatTimestamp,
 	timestampToSeconds,
 } from '@/app/lib/youtube'
-import {
-	ArrowLeftIcon,
-	ArrowUpIcon,
-	CheckIcon,
-	ChevronDownIcon,
-	CopyIcon,
-	PrintIcon,
-	YouTubeIcon,
-} from './icons'
+import { YouTubeIcon } from './icons'
+import { NotesActions } from './notes-actions'
+import { useVideoDialog } from './video-dialog'
+import { useActiveSection } from './use-active-section'
+import { useScrolledPast } from './use-scrolled-past'
 import { StreamedText } from './streamed-text'
 import { TimestampPill } from './timestamp-pill'
 
@@ -40,19 +35,37 @@ type NavItemType = {
 type Props = {
 	notes: SermonNotesType
 	meta: VideoMetaType | null
+	/** Start a new set of notes. The closing call to action. */
 	onReset: () => void
 	/** The model is still writing: the notes below are complete so far, not final. */
 	streaming?: boolean
+	/**
+	 * Only the opening of the notes is here — the rest was never sent. The body
+	 * fades out where it stops and `gate` is offered underneath it.
+	 */
+	preview?: boolean
+	/** Rendered below the fade. The way past the cut. */
+	gate?: React.ReactNode
 }
 
-export function NotesView({ notes, meta, onReset, streaming = false }: Props) {
+export function NotesView({
+	notes,
+	meta,
+	onReset,
+	streaming = false,
+	preview = false,
+	gate,
+}: Props) {
 	const videoId = meta?.videoId ?? null
-
-	useFollowStream(streaming, notes)
+	const { openVideo } = useVideoDialog()
 
 	// Words keep animating for a moment after the stream ends, so the final
 	// burst finishes its entrance instead of snapping into place.
 	const animating = useSettling(streaming)
+
+	// The mask stays mounted for the length of the lift; removing it outright
+	// would snap the fade away instead of drawing it back.
+	const { clipped, lifting } = useClipLift(preview)
 
 	// Only the passage the model is currently writing carries the caret.
 	const caretKey = streaming ? leadingEdge(notes) : null
@@ -108,18 +121,10 @@ export function NotesView({ notes, meta, onReset, streaming = false }: Props) {
 	])
 
 	const activeId = useActiveSection(navItems.map(item => item.id))
+	const scrolledPast = useScrolledPast(BACK_TO_TOP_AFTER_PX)
 
 	return (
 		<div className="animate-fade">
-			<Toolbar
-				notes={notes}
-				meta={meta}
-				onReset={onReset}
-				streaming={streaming}
-				navItems={navItems}
-				activeId={activeId}
-			/>
-
 			<div className="mx-auto w-full max-w-5xl px-6 pb-28">
 				<header className="pt-12 sm:pt-16">
 					<Eyebrow>Sermon notes</Eyebrow>
@@ -149,17 +154,34 @@ export function NotesView({ notes, meta, onReset, streaming = false }: Props) {
 								</span>
 							</>
 						)}
-						{meta?.url && (
+						{meta?.url && videoId && (
 							<>
 								<Dot />
 								<a
 									href={meta.url}
 									target="_blank"
 									rel="noreferrer"
+									onClick={event => {
+										if (
+											event.metaKey ||
+											event.ctrlKey ||
+											event.shiftKey ||
+											event.altKey
+										) {
+											return
+										}
+
+										event.preventDefault()
+										openVideo({
+											videoId,
+											seconds: null,
+											title: notes.title || meta.title,
+										})
+									}}
 									className="hover:text-accent-strong no-print inline-flex items-center gap-1.5 transition-colors"
 								>
 									<YouTubeIcon className="size-4" />
-									Watch on YouTube
+									Watch the sermon
 								</a>
 							</>
 						)}
@@ -181,6 +203,7 @@ export function NotesView({ notes, meta, onReset, streaming = false }: Props) {
 											<TimestampPill
 												timestamp={text.timestamp}
 												videoId={videoId}
+												title={notes.title || meta?.title}
 											/>
 										)}
 									</span>
@@ -213,6 +236,13 @@ export function NotesView({ notes, meta, onReset, streaming = false }: Props) {
 					<Outline items={navItems} activeId={activeId} />
 
 					<div className="min-w-0">
+						<div
+							className={
+								clipped
+									? `notes-clip${lifting ? ' notes-clip-lifting' : ''}`
+									: undefined
+							}
+						>
 						<div>
 							{notes.sections.map((section, index) => (
 								<section
@@ -230,6 +260,7 @@ export function NotesView({ notes, meta, onReset, streaming = false }: Props) {
 											<TimestampPill
 												timestamp={section.timestamp}
 												videoId={videoId}
+												title={notes.title || meta?.title}
 												tone="solid"
 											/>
 										)}
@@ -314,6 +345,7 @@ export function NotesView({ notes, meta, onReset, streaming = false }: Props) {
 												<TimestampPill
 													timestamp={entry.timestamp}
 													videoId={videoId}
+													title={notes.title || meta?.title}
 												/>
 											)}
 										</li>
@@ -380,7 +412,11 @@ export function NotesView({ notes, meta, onReset, streaming = false }: Props) {
 							</section>
 						)}
 
-						{!streaming && (
+						</div>
+
+						{gate && <div className="animate-rise mt-10">{gate}</div>}
+
+						{!streaming && !preview && (
 							<div className="no-print animate-fade mt-20 text-center">
 								<button
 									type="button"
@@ -395,198 +431,16 @@ export function NotesView({ notes, meta, onReset, streaming = false }: Props) {
 				</div>
 			</div>
 
-			<BackToTop />
+			<NotesActions
+				notes={notes}
+				meta={meta}
+				navItems={navItems}
+				activeId={activeId}
+				disabled={streaming}
+				locked={preview}
+				showBackToTop={scrolledPast}
+			/>
 		</div>
-	)
-}
-
-type ToolbarProps = Props & {
-	navItems: NavItemType[]
-	activeId: string | null
-}
-
-function Toolbar({
-	notes,
-	meta,
-	onReset,
-	streaming = false,
-	navItems,
-	activeId,
-}: ToolbarProps) {
-	const [copied, setCopied] = useState(false)
-	const [menuOpen, setMenuOpen] = useState(false)
-
-	const activeLabel = navItems.find(item => item.id === activeId)?.label
-
-	async function handleCopy() {
-		try {
-			await navigator.clipboard.writeText(notesToText(notes, meta))
-			setCopied(true)
-			setTimeout(() => setCopied(false), 2000)
-		} catch {
-			setCopied(false)
-		}
-	}
-
-	useEffect(() => {
-		if (!menuOpen) {
-			return
-		}
-
-		const onKeyDown = (event: KeyboardEvent) => {
-			if (event.key === 'Escape') {
-				setMenuOpen(false)
-			}
-		}
-
-		window.addEventListener('keydown', onKeyDown)
-
-		return () => window.removeEventListener('keydown', onKeyDown)
-	}, [menuOpen])
-
-	function jumpTo(id: string) {
-		setMenuOpen(false)
-		scrollToSection(id)
-	}
-
-	return (
-		<div className="no-print border-line bg-paper/85 sticky top-0 z-20 border-b backdrop-blur-md">
-			{streaming && (
-				<div className="bg-paper-sunk absolute inset-x-0 bottom-0 h-0.5 overflow-hidden">
-					<span className="via-accent absolute inset-y-0 w-1/3 animate-sweep bg-linear-to-r from-transparent to-transparent" />
-				</div>
-			)}
-
-			<div className="relative z-20 mx-auto flex w-full max-w-5xl items-center gap-3 px-6 py-3">
-				{/* Wide screens keep the outline in the margin, so the bar just goes back. */}
-				<button
-					type="button"
-					onClick={onReset}
-					className="text-ink-muted hover:text-ink -ml-2 hidden items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors lg:inline-flex"
-				>
-					<ArrowLeftIcon className="size-4" />
-					New notes
-				</button>
-
-				{/* Below `lg` there is no margin outline, so the bar becomes the nav. */}
-				<button
-					type="button"
-					onClick={() => setMenuOpen(open => !open)}
-					disabled={navItems.length === 0}
-					aria-expanded={menuOpen}
-					aria-controls="jump-menu"
-					className="text-ink-muted hover:text-ink -ml-2 flex min-w-0 flex-1 items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm transition-colors disabled:opacity-40 lg:hidden"
-				>
-					<span className="truncate">{activeLabel ?? 'Jump to section'}</span>
-					<ChevronDownIcon
-						className={`size-4 shrink-0 transition-transform duration-200 ${
-							menuOpen ? 'rotate-180' : ''
-						}`}
-					/>
-				</button>
-
-				<span className="text-ink-faint hidden min-w-0 flex-1 truncate text-center text-xs lg:block">
-					{notes.title || meta?.title}
-				</span>
-
-				<div className="ml-auto flex items-center gap-1">
-					<ToolbarButton
-						onClick={handleCopy}
-						label={copied ? 'Copied' : 'Copy'}
-						disabled={streaming}
-					>
-						{copied ? (
-							<CheckIcon className="text-accent-strong size-4" />
-						) : (
-							<CopyIcon className="size-4" />
-						)}
-					</ToolbarButton>
-
-					<ToolbarButton
-						onClick={() => window.print()}
-						label="Print"
-						disabled={streaming}
-					>
-						<PrintIcon className="size-4" />
-					</ToolbarButton>
-				</div>
-			</div>
-
-			{menuOpen && (
-				<>
-					<button
-						type="button"
-						tabIndex={-1}
-						aria-hidden
-						onClick={() => setMenuOpen(false)}
-						className="fixed inset-0 z-10 cursor-default lg:hidden"
-					/>
-
-					<nav
-						id="jump-menu"
-						className="border-line bg-paper animate-fade relative z-20 h-[calc(100vh-56px)] overflow-y-auto border-t lg:hidden"
-					>
-						<ul className="mx-auto w-full max-w-5xl px-4 py-2">
-							{navItems.map(item => (
-								<li key={item.id}>
-									<button
-										type="button"
-										onClick={() => jumpTo(item.id)}
-										className={`flex w-full items-baseline gap-3 rounded-lg px-3 py-2.5 text-left text-[0.9375rem] leading-snug transition-colors ${
-											activeId === item.id
-												? 'bg-accent-tint text-ink font-medium'
-												: 'text-ink-muted hover:bg-paper-sunk'
-										}`}
-									>
-										<span className="min-w-0 flex-1">{item.label}</span>
-										{item.timestamp && (
-											<span className="text-ink-faint shrink-0 font-mono text-[0.6875rem] tabular-nums">
-												{formatTimestamp(item.timestamp)}
-											</span>
-										)}
-									</button>
-								</li>
-							))}
-						</ul>
-
-						<div className="border-line mx-auto w-full max-w-5xl border-t px-4 py-3">
-							<button
-								type="button"
-								onClick={onReset}
-								className="border-line bg-surface hover:border-accent/40 hover:text-accent-strong flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors"
-							>
-								<ArrowLeftIcon className="size-4" />
-								Take notes on another sermon
-							</button>
-						</div>
-					</nav>
-				</>
-			)}
-		</div>
-	)
-}
-
-function ToolbarButton({
-	onClick,
-	label,
-	disabled,
-	children,
-}: {
-	onClick: () => void
-	label: string
-	disabled?: boolean
-	children: React.ReactNode
-}) {
-	return (
-		<button
-			type="button"
-			onClick={onClick}
-			disabled={disabled}
-			className="text-ink-muted hover:bg-paper-sunk hover:text-ink disabled:pointer-events-none disabled:opacity-40 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
-		>
-			{children}
-			<span className="hidden sm:inline">{label}</span>
-		</button>
 	)
 }
 
@@ -640,24 +494,6 @@ function Outline({
  * Returns the reader to the top of the notes. Fixed rather than in the flow so
  * it stays reachable from anywhere on the page, on any screen size.
  */
-function BackToTop() {
-	const visible = useScrolledPast(BACK_TO_TOP_AFTER_PX)
-
-	return (
-		<button
-			type="button"
-			onClick={() => window.scrollTo({ top: 0, behavior: scrollBehavior() })}
-			aria-label="Back to top"
-			className={`no-print border-line bg-surface/90 text-ink-muted hover:border-accent/40 hover:text-accent-strong focus-visible:ring-accent/40 fixed right-5 bottom-5 z-30 inline-flex size-11 items-center justify-center rounded-full border shadow-lg backdrop-blur-md transition-all duration-200 focus-visible:ring-2 focus-visible:outline-none sm:right-8 sm:bottom-8 ${
-				visible
-					? 'translate-y-0 opacity-100'
-					: 'pointer-events-none translate-y-2 opacity-0'
-			}`}
-		>
-			<ArrowUpIcon className="size-5" />
-		</button>
-	)
-}
 
 /**
  * Smooth by default, instant for readers who have asked for reduced motion —
@@ -677,40 +513,6 @@ function scrollToSection(id: string) {
 		?.scrollIntoView({ behavior: scrollBehavior(), block: 'start' })
 }
 
-function useScrolledPast(threshold: number) {
-	const [past, setPast] = useState(false)
-
-	useEffect(() => {
-		let frame = 0
-
-		const measure = () => {
-			frame = 0
-			setPast(window.scrollY > threshold)
-		}
-
-		const schedule = () => {
-			if (!frame) {
-				frame = requestAnimationFrame(measure)
-			}
-		}
-
-		schedule()
-		window.addEventListener('scroll', schedule, { passive: true })
-		window.addEventListener('resize', schedule)
-
-		return () => {
-			if (frame) {
-				cancelAnimationFrame(frame)
-			}
-
-			window.removeEventListener('scroll', schedule)
-			window.removeEventListener('resize', schedule)
-		}
-	}, [threshold])
-
-	return past
-}
-
 function SectionHeading({ children }: { children: React.ReactNode }) {
 	return (
 		<div className="flex items-center gap-4">
@@ -722,66 +524,35 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 	)
 }
 
-/** How close to the bottom still counts as "reading along with the writing". */
-const FOLLOW_THRESHOLD_PX = 160
+/** How long the paywall fade takes to draw back. Matches the CSS transition. */
+const CLIP_LIFT_MS = 460
 
 /**
- * Walks the page down as the notes are written, the way a terminal tails
- * output. Following stops the moment the reader scrolls up to re-read
- * something, and picks back up if they return to the bottom — so the page
- * never yanks itself out from under someone mid-sentence.
+ * Holds the mask in place while it animates open, then takes it away. Without
+ * the hold there is nothing left on the element for the transition to run on
+ * and the fade vanishes in a frame.
  */
-function useFollowStream(active: boolean, notes: SermonNotesType) {
-	const following = useRef(true)
-	const selfY = useRef(0)
-	const wasActive = useRef(false)
+function useClipLift(preview: boolean) {
+	const [lifting, setLifting] = useState(false)
+	const wasPreview = useRef(preview)
 
 	useEffect(() => {
-		if (!active) {
+		const justLifted = wasPreview.current && !preview
+
+		wasPreview.current = preview
+
+		if (!justLifted) {
 			return
 		}
 
-		following.current = true
-		selfY.current = window.scrollY
+		setLifting(true)
 
-		const onScroll = () => {
-			// Compare against where *we* last parked the viewport rather than
-			// against the distance to the bottom. Our own scrollTo fires this
-			// handler asynchronously, and by the time it runs the next snapshot
-			// has often already grown the page — measuring the gap to the bottom
-			// there reads as "the reader scrolled up" and stops the follow for
-			// good. Position never lies: growing content cannot move the viewport.
-			if (Math.abs(window.scrollY - selfY.current) <= 1) {
-				return
-			}
+		const timer = setTimeout(() => setLifting(false), CLIP_LIFT_MS)
 
-			const fromBottom =
-				document.documentElement.scrollHeight -
-				(window.scrollY + window.innerHeight)
+		return () => clearTimeout(timer)
+	}, [preview])
 
-			following.current = fromBottom < FOLLOW_THRESHOLD_PX
-		}
-
-		window.addEventListener('scroll', onScroll, { passive: true })
-
-		return () => window.removeEventListener('scroll', onScroll)
-	}, [active])
-
-	// Runs on every snapshot — `notes` is a fresh object each time one lands —
-	// and once more as the stream ends, so the closing content is not left
-	// sitting below the fold.
-	useEffect(() => {
-		const justFinished = wasActive.current && !active
-
-		wasActive.current = active
-
-		if ((!active && !justFinished) || !following.current) {
-			return
-		}
-
-		window.scrollTo({ top: document.documentElement.scrollHeight })
-		selfY.current = window.scrollY
-	}, [active, notes])
+	return { clipped: preview || lifting, lifting }
 }
 
 /** Keeps word animations running briefly after the stream stops. */
@@ -882,55 +653,4 @@ function Dot() {
  * the last one whose heading has passed the top quarter of the viewport.
  * Measured on scroll rather than observed, so it stays correct after a jump.
  */
-function useActiveSection(sectionIds: string[]) {
-	const [activeId, setActiveId] = useState<string | null>(sectionIds[0] ?? null)
 
-	// A new section arriving mid-stream hands this hook a fresh array on every
-	// snapshot. Keying the effect on the contents rather than the identity keeps
-	// it from tearing down and re-attaching the scroll listener each time.
-	const sectionKey = sectionIds.join('|')
-
-	useEffect(() => {
-		const ids = sectionKey ? sectionKey.split('|') : []
-
-		let frame = 0
-
-		const measure = () => {
-			frame = 0
-
-			const line = window.innerHeight * 0.25
-			let current = ids[0] ?? null
-
-			for (const id of ids) {
-				const element = document.getElementById(id)
-
-				if (element && element.getBoundingClientRect().top <= line) {
-					current = id
-				}
-			}
-
-			setActiveId(current)
-		}
-
-		const schedule = () => {
-			if (!frame) {
-				frame = requestAnimationFrame(measure)
-			}
-		}
-
-		schedule()
-		window.addEventListener('scroll', schedule, { passive: true })
-		window.addEventListener('resize', schedule)
-
-		return () => {
-			if (frame) {
-				cancelAnimationFrame(frame)
-			}
-
-			window.removeEventListener('scroll', schedule)
-			window.removeEventListener('resize', schedule)
-		}
-	}, [sectionKey])
-
-	return activeId
-}
