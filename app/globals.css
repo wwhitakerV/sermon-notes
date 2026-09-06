@@ -219,12 +219,41 @@ body {
 	--clip-fade: 0rem;
 }
 
+/*
+ * The home page preview: real notes drifting slowly past a window, so someone
+ * who will not spend forty seconds trying it can still see what they get.
+ *
+ * Held still at both ends so the opening and the closing sections can be read,
+ * and linear in between because an eased scroll reads as a swipe rather than
+ * as reading.
+ */
+.notes-drift {
+	animation: notes-drift 26s linear infinite;
+}
+
+@keyframes notes-drift {
+	0%,
+	7% {
+		transform: translateY(0);
+	}
+	93%,
+	100% {
+		transform: translateY(calc(-100% + var(--drift-window)));
+	}
+}
+
 /* Notes prose rhythm */
 .note-body {
 	text-wrap: pretty;
 }
 
 @media (prefers-reduced-motion: reduce) {
+	/* Left at the top rather than snapped to the end. */
+	.notes-drift {
+		animation: none;
+		transform: none;
+	}
+
 	*,
 	*::before,
 	*::after {

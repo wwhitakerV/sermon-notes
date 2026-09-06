@@ -197,3 +197,26 @@ export const feedback = pgTable('feedback', {
 		.notNull()
 		.defaultNow(),
 })
+
+/**
+ * A one-shot ticket to set a new password.
+ *
+ * Only the hash of the token is kept, exactly as with sessions — a leaked
+ * database must not hand anyone a working reset link. Single use, short lived,
+ * and every session is ended when one is redeemed.
+ */
+export const passwordResets = pgTable(
+	'password_resets',
+	{
+		id: text('id').primaryKey(),
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+		usedAt: timestamp('used_at', { withTimezone: true }),
+		createdAt: timestamp('created_at', { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	table => [index('password_resets_user_id_idx').on(table.userId)],
+)

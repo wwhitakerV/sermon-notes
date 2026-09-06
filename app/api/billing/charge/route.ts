@@ -8,6 +8,7 @@ import {
 	grantForIntent,
 	intentMetadata,
 	markIntentFailed,
+	purchaseDescription,
 } from '@/app/lib/billing'
 import { getDb, users } from '@/app/lib/db'
 import { getStripe } from '@/app/lib/stripe'
@@ -64,6 +65,10 @@ export async function POST(request: Request) {
 				off_session: true,
 				confirm: true,
 				payment_method_types: ['card'],
+				description: purchaseDescription(pack),
+				// Stripe sends its own receipt when this is set — a hosted page with a
+				// downloadable PDF, a receipt number and the card used.
+				receipt_email: user.email,
 				metadata: intentMetadata(user, pack),
 			},
 			{ idempotencyKey: parsed.data.idempotencyKey },

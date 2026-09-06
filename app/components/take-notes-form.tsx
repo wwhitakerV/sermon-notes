@@ -5,6 +5,7 @@ import { useRef } from 'react'
 import type { ErrorCodeType, VideoMetaType } from '@/app/types'
 import { formatSeconds } from '@/app/lib/youtube'
 import { AlertIcon, ArrowRightIcon, CloseIcon, YouTubeIcon } from './icons'
+import { NotesPreview } from './notes-preview'
 
 /**
  * Something to paste for the many people who agree with the headline and then
@@ -69,7 +70,7 @@ export function TakeNotesForm({
 
 				<p className="text-ink-muted mx-auto mt-5 max-w-md text-[1.0625rem] leading-relaxed text-pretty">
 					Paste a YouTube link and get notes you&rsquo;ll actually come back to.
-					About a minute per sermon.
+					It takes less than 15 seconds per sermon.
 				</p>
 			</div>
 
@@ -105,7 +106,7 @@ export function TakeNotesForm({
 									onClick={() => onUrlChange(SAMPLE_URL)}
 									className="text-accent-strong hover:text-accent text-[0.75rem] font-medium underline underline-offset-2 transition-colors"
 								>
-									or try one
+									or use an example
 								</button>
 							</div>
 
@@ -148,14 +149,22 @@ export function TakeNotesForm({
 				</p>
 			)}
 
-			<p className="text-ink-muted mt-5 text-center text-[0.8125rem] leading-relaxed text-balance">
-				First sermon free. $1 each after that — no subscription.
-			</p>
-
-			<p className="text-ink-faint mt-2 text-center text-[0.8125rem] leading-relaxed text-balance">
-				Works best with sermons, Bible studies, and Christian teaching videos
-				from 30 minutes to an hour or more.
-			</p>
+			{/*
+			 * The offer, not the fine print. It used to be set at the same size and
+			 * colour as the caveat below it, which made the best reason to try this
+			 * look like a limitation.
+			 */}
+			<div className="mt-6 text-center">
+				<p className="text-ink text-[1.0625rem] leading-snug font-medium text-balance">
+					Your first sermon is free.
+				</p>
+				<p className="text-ink-muted mt-1.5 text-[0.8125rem] leading-relaxed text-balance">
+					<span className="text-accent-strong font-medium">$1</span> each after
+					— five for{' '}
+					<span className="text-accent-strong font-medium">$5</span>. No
+					subscription.
+				</p>
+			</div>
 
 			<div className="animate-rise mt-16 [animation-delay:160ms]">
 				<div className="flex items-center gap-4">
@@ -175,6 +184,16 @@ export function TakeNotesForm({
 						</li>
 					))}
 				</ul>
+
+				{/* The chips say what is in the notes; this shows it. */}
+				<div className="mt-6">
+					<NotesPreview />
+				</div>
+
+				<p className="text-ink-faint mt-5 text-center text-[0.8125rem] leading-relaxed text-balance">
+					Works best with sermons, Bible studies, and Christian teaching videos
+					from 30 minutes to an hour or more.
+				</p>
 			</div>
 		</div>
 	)

@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { accountStateFor } from '@/app/lib/account-state'
 import { currentUser } from '@/app/lib/auth/session'
-import { ensureCustomer, intentMetadata } from '@/app/lib/billing'
+import {
+	ensureCustomer,
+	intentMetadata,
+	purchaseDescription,
+} from '@/app/lib/billing'
 import { getStripe } from '@/app/lib/stripe'
 import { findPack } from '@/app/lib/token-packs'
 
@@ -45,6 +49,10 @@ export async function POST(request: Request) {
 		// Cards only: anything that would bounce the reader to another site
 		// would take their pasted sermon URL with it.
 		payment_method_types: ['card'],
+		description: purchaseDescription(pack),
+		// Stripe sends its own receipt when this is set — a hosted page with a
+		// downloadable PDF, a receipt number and the card used.
+		receipt_email: user.email,
 		metadata: intentMetadata(user, pack),
 	})
 

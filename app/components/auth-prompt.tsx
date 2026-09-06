@@ -3,13 +3,13 @@
 import Link from 'next/link'
 import { useRef, useState } from 'react'
 import type { AccountStateType } from '@/app/types'
-import { AlertIcon, ArrowRightIcon, CloseIcon } from './icons'
+import { AlertIcon, ArrowRightIcon, CheckIcon, CloseIcon } from './icons'
 
 const MIN_PASSWORD_LENGTH = 8
 
 type VariantType = 'unlock' | 'reveal' | 'signin'
 
-type ModeType = 'create' | 'signin'
+type ModeType = 'create' | 'signin' | 'forgot'
 
 type Props = {
 	variant: VariantType
@@ -47,9 +47,36 @@ const CREATING: Record<VariantType, CopyType> = {
 	},
 }
 
-const SIGNING_IN: CopyType = {
-	title: 'Welcome back',
-	body: '',
+/**
+ * Signing in is the default when the free sermon is already spent: to have read
+ * those notes at all they had to make an account, so a returning reader is
+ * being asked to remember a password, not to invent one.
+ */
+const FORGOT: CopyType = {
+	title: 'Reset your password',
+	body: 'Enter your email and we will send a link to set a new one.',
+}
+
+const SIGNING_IN: Record<VariantType, CopyType> = {
+	unlock: {
+		title: 'Welcome back',
+		body: 'Sign in to take notes on another sermon.',
+	},
+	reveal: {
+		title: 'Welcome back',
+		body: 'Sign in to open the rest of these notes.',
+	},
+	signin: {
+		title: 'Welcome back',
+		body: '',
+	},
+}
+
+/** Where each prompt opens. Only the first sermon assumes a newcomer. */
+const OPENS_ON: Record<VariantType, ModeType> = {
+	unlock: 'signin',
+	reveal: 'create',
+	signin: 'signin',
 }
 
 /**
@@ -63,18 +90,22 @@ export function AuthPrompt({
 	onDismiss,
 	inline = false,
 }: Props) {
-	const [mode, setMode] = useState<ModeType>(
-		variant === 'signin' ? 'signin' : 'create',
-	)
+	const [mode, setMode] = useState<ModeType>(OPENS_ON[variant])
 	const [email, setEmail] = useState('')
 	const [password, setPassword] = useState('')
 	const [busy, setBusy] = useState(false)
 	const [error, setError] = useState<string | null>(null)
+	const [resetSent, setResetSent] = useState(false)
 
 	const passwordRef = useRef<HTMLInputElement>(null)
 
 	const creating = mode === 'create'
-	const copy = creating ? CREATING[variant] : SIGNING_IN
+	const forgot = mode === 'forgot'
+	const copy = forgot
+		? FORGOT
+		: creating
+			? CREATING[variant]
+			: SIGNING_IN[variant]
 
 	async function handleSubmit(event: React.FormEvent) {
 		event.preventDefault()
@@ -87,6 +118,20 @@ export function AuthPrompt({
 		setError(null)
 
 		try {
+			// Always answers the same, whether or not the address has an account —
+			// so the screen must too.
+			if (mode === 'forgot') {
+				await fetch('/api/auth/forgot', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ email }),
+				})
+
+				setResetSent(true)
+
+				return
+			}
+
 			const response = await fetch(
 				mode === 'create' ? '/api/auth/signup' : '/api/auth/login',
 				{
@@ -119,6 +164,33 @@ export function AuthPrompt({
 		}
 	}
 
+	if (resetSent) {
+		return (
+			<div className="border-line bg-surface no-print rounded-2xl border p-5 text-center sm:p-6">
+				<span className="bg-accent-tint text-accent-strong mx-auto flex size-11 items-center justify-center rounded-full">
+					<CheckIcon className="size-5" />
+				</span>
+				<h2 className="font-serif mt-3 text-[1.25rem] font-medium tracking-tight">
+					Check your email
+				</h2>
+				<p className="text-ink-muted mt-1.5 text-[0.9375rem] leading-relaxed text-pretty">
+					If {email} has an account, a link to set a new password is on its
+					way. It works once and expires in an hour.
+				</p>
+				<button
+					type="button"
+					onClick={() => {
+						setResetSent(false)
+						setMode('signin')
+					}}
+					className="text-ink-faint hover:text-accent-strong mt-4 text-[0.8125rem] underline underline-offset-2 transition-colors"
+				>
+					Back to sign in
+				</button>
+			</div>
+		)
+	}
+
 	return (
 		<div className="border-line bg-surface no-print rounded-2xl border p-5 shadow-[0_1px_2px_rgb(26_24_21/0.04),0_12px_32px_-16px_rgb(26_24_21/0.14)] sm:p-6">
 			<div className="flex items-start gap-4">
@@ -126,9 +198,11 @@ export function AuthPrompt({
 					<h2 className="font-serif text-[1.375rem] leading-tight font-medium tracking-tight text-balance">
 						{copy.title}
 					</h2>
-					<p className="text-ink-muted mt-1.5 text-[0.9375rem] leading-relaxed text-pretty">
-						{copy.body}
-					</p>
+					{copy.body && (
+						<p className="text-ink-muted mt-1.5 text-[0.9375rem] leading-relaxed text-pretty">
+							{copy.body}
+						</p>
+					)}
 				</div>
 
 				{onDismiss && (
@@ -153,15 +227,20 @@ export function AuthPrompt({
 					autoComplete="email"
 					autoFocus={!inline}
 				/>
-				<Field
-					ref={passwordRef}
-					label="Password"
-					type="password"
-					value={password}
-					onChange={setPassword}
-					autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-					minLength={MIN_PASSWORD_LENGTH}
-				/>
+				{/* Resetting only needs the address to send the link to. */}
+				{!forgot && (
+					<Field
+						ref={passwordRef}
+						label="Password"
+						type="password"
+						value={password}
+						onChange={setPassword}
+						autoComplete={
+							mode === 'signin' ? 'current-password' : 'new-password'
+						}
+						minLength={MIN_PASSWORD_LENGTH}
+					/>
+				)}
 
 				{error && (
 					<p
@@ -178,10 +257,32 @@ export function AuthPrompt({
 					disabled={busy}
 					className="bg-accent-strong shadow-accent/25 hover:bg-accent focus-visible:ring-accent/40 disabled:bg-paper-sunk disabled:text-ink-faint mt-1 flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-[0.9375rem] font-semibold text-white shadow-lg transition-all duration-200 hover:shadow-xl focus-visible:ring-2 focus-visible:outline-none disabled:shadow-none"
 				>
-					{busy ? 'One moment…' : creating ? 'Create free account' : 'Sign in'}
+					{busy
+						? 'One moment…'
+						: forgot
+							? 'Send reset link'
+							: creating
+								? 'Create free account'
+								: 'Sign in'}
 					{!busy && <ArrowRightIcon className="size-4" />}
 				</button>
 			</form>
+
+			{/* Only offered where a password is being remembered, not invented. */}
+			{mode === 'signin' && (
+				<p className="mt-3 text-center text-[0.8125rem]">
+					<button
+						type="button"
+						onClick={() => {
+							setMode('forgot')
+							setError(null)
+						}}
+						className="text-ink-faint hover:text-accent-strong underline underline-offset-2 transition-colors"
+					>
+						Forgot your password?
+					</button>
+				</p>
+			)}
 
 			{creating && (
 				<p className="text-ink-faint mt-3.5 text-center text-[0.75rem] leading-relaxed text-balance">
@@ -204,16 +305,16 @@ export function AuthPrompt({
 			)}
 
 			<p className="text-ink-faint mt-3.5 text-center text-[0.8125rem]">
-				{creating ? 'Already have an account?' : 'New here?'}{' '}
+				{forgot ? 'Remembered it?' : creating ? 'Already have an account?' : 'New here?'}{' '}
 				<button
 					type="button"
 					onClick={() => {
-						setMode(creating ? 'signin' : 'create')
+						setMode(creating ? 'signin' : forgot ? 'signin' : 'create')
 						setError(null)
 					}}
 					className="hover:text-accent-strong underline underline-offset-2 transition-colors"
 				>
-					{creating ? 'Sign in' : 'Create one'}
+					{creating || forgot ? 'Sign in' : 'Create one'}
 				</button>
 			</p>
 		</div>

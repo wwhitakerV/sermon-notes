@@ -66,10 +66,12 @@ export async function grantForIntent(
 		UPDATE users
 			SET token_balance = token_balance + (SELECT tokens_granted FROM claimed)
 			WHERE id = (SELECT user_id FROM claimed)
-		RETURNING token_balance
+		RETURNING token_balance, email
 	`)
 
-	return rowCount(result) > 0
+	// A row comes back only from the call that actually claimed the payment, so
+	// this stays the single point that runs once per charge.
+	return firstRow(result) !== null
 }
 
 /** Records a decline so pending rows do not sit unresolved forever. */
@@ -145,6 +147,11 @@ export async function forgetCard(userId: string): Promise<void> {
 	}
 }
 
+/** What the reader sees as the line item on Stripe's receipt. */
+export function purchaseDescription(pack: PackType): string {
+	return `${pack.tokens} sermon ${pack.tokens === 1 ? 'token' : 'tokens'} — Sermon Drop`
+}
+
 export function intentMetadata(
 	user: UserRowType,
 	pack: PackType,
@@ -152,12 +159,11 @@ export function intentMetadata(
 	return { userId: user.id, tokens: String(pack.tokens) }
 }
 
-function rowCount(result: unknown): number {
-	if (Array.isArray(result)) {
-		return result.length
-	}
+/** The driver hands back either an array or an object with `rows`. */
+function firstRow<T>(result: unknown): T | null {
+	const rows = Array.isArray(result)
+		? result
+		: ((result as { rows?: unknown[] })?.rows ?? [])
 
-	const rows = (result as { rows?: unknown[] })?.rows
-
-	return Array.isArray(rows) ? rows.length : 0
+	return (rows[0] as T) ?? null
 }
