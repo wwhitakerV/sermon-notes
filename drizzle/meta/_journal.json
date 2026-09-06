@@ -36,6 +36,13 @@
       "when": 1788649910065,
       "tag": "0004_sharp_bucky",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788654892467,
+      "tag": "0005_flashy_vanisher",
+      "breakpoints": true
     }
   ]
 }

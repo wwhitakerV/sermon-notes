@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { findUserByEmail, normalizeEmail } from '@/app/lib/auth/accounts'
 import { createPasswordReset } from '@/app/lib/auth/password-reset'
 import { sendEmail } from '@/app/lib/email'
+import { clientIp, rateLimit, tooManyRequests } from '@/app/lib/rate-limit'
 import { siteUrl } from '@/app/lib/site-url'
 
 const bodySchema = z.object({ email: z.email().max(254) })
@@ -26,6 +27,15 @@ export async function POST(request: Request) {
 	}
 
 	const email = normalizeEmail(parsed.data.email)
+
+	for (const subject of [clientIp(request), email]) {
+		const { allowed, retryAfter } = await rateLimit('forgot', subject)
+
+		if (!allowed) {
+			return tooManyRequests(retryAfter)
+		}
+	}
+
 	const user = await findUserByEmail(email)
 
 	if (user) {

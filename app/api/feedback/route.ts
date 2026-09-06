@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { readDeviceId } from '@/app/lib/auth/device'
 import { currentUser } from '@/app/lib/auth/session'
 import { feedback, getDb } from '@/app/lib/db'
+import { clientIp, rateLimit, tooManyRequests } from '@/app/lib/rate-limit'
 
 const bodySchema = z.object({
 	rating: z.number().int().min(1).max(5),
@@ -22,6 +23,12 @@ export async function POST(request: Request) {
 			{ error: 'Pick a rating from one to five.', code: 'invalid_feedback' },
 			{ status: 400 },
 		)
+	}
+
+	const throttled = await rateLimit('feedback', clientIp(request))
+
+	if (!throttled.allowed) {
+		return tooManyRequests(throttled.retryAfter)
 	}
 
 	const user = await currentUser()

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { redeemPasswordReset } from '@/app/lib/auth/password-reset'
 import { MIN_PASSWORD_LENGTH } from '@/app/lib/auth/password'
+import { clientIp, rateLimit, tooManyRequests } from '@/app/lib/rate-limit'
 
 const bodySchema = z.object({
 	token: z.string().min(8).max(255),
@@ -19,6 +20,12 @@ export async function POST(request: Request) {
 			},
 			{ status: 400 },
 		)
+	}
+
+	const throttled = await rateLimit('reset', clientIp(request))
+
+	if (!throttled.allowed) {
+		return tooManyRequests(throttled.retryAfter)
 	}
 
 	const done = await redeemPasswordReset(parsed.data.token, parsed.data.password)

@@ -4,6 +4,7 @@ import { findUserByEmail, loginSchema } from '@/app/lib/auth/accounts'
 import { readDeviceId } from '@/app/lib/auth/device'
 import { verifyPassword } from '@/app/lib/auth/password'
 import { createSession } from '@/app/lib/auth/session'
+import { clientIp, rateLimit, tooManyRequests } from '@/app/lib/rate-limit'
 import { claimDeviceConversions } from '@/app/lib/notes-cache'
 
 export async function POST(request: Request) {
@@ -16,6 +17,16 @@ export async function POST(request: Request) {
 			{ error: 'Enter your email and password.', code: 'invalid_credentials' },
 			{ status: 400 },
 		)
+	}
+
+	// Both, because one IP trying many accounts and many IPs trying one account
+	// are different attacks and only one of them is stopped by each key.
+	for (const subject of [clientIp(request), parsed.data.email]) {
+		const { allowed, retryAfter } = await rateLimit('login', subject)
+
+		if (!allowed) {
+			return tooManyRequests(retryAfter)
+		}
 	}
 
 	const user = await findUserByEmail(parsed.data.email)

@@ -220,3 +220,18 @@ export const passwordResets = pgTable(
 	},
 	table => [index('password_resets_user_id_idx').on(table.userId)],
 )
+
+/**
+ * Counters for throttling, one row per subject and action.
+ *
+ * In the database rather than in memory because each serverless invocation can
+ * be a fresh instance — an in-process counter would reset constantly and throttle
+ * almost nothing.
+ */
+export const rateLimits = pgTable('rate_limits', {
+	key: text('key').primaryKey(),
+	count: integer('count').notNull().default(0),
+	windowStart: timestamp('window_start', { withTimezone: true })
+		.notNull()
+		.defaultNow(),
+})

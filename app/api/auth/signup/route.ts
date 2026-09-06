@@ -8,6 +8,7 @@ import {
 import { ensureDevice, linkDeviceToUser, readDeviceId } from '@/app/lib/auth/device'
 import { verifyPassword } from '@/app/lib/auth/password'
 import { createSession } from '@/app/lib/auth/session'
+import { clientIp, rateLimit, tooManyRequests } from '@/app/lib/rate-limit'
 import type { UserRowType } from '@/app/lib/db'
 import { claimDeviceConversions } from '@/app/lib/notes-cache'
 
@@ -29,6 +30,12 @@ export async function POST(request: Request) {
 			},
 			{ status: 400 },
 		)
+	}
+
+	const throttled = await rateLimit('signup', clientIp(request))
+
+	if (!throttled.allowed) {
+		return tooManyRequests(throttled.retryAfter)
 	}
 
 	const { email, password } = parsed.data
