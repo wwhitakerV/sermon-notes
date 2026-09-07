@@ -208,10 +208,13 @@ function FloatingButton({
 	className?: string
 	children: React.ReactNode
 }) {
-	// White, with the colour carried by the glow underneath rather than a fill.
-	const skin =
-		pressed || tone === 'accent'
-			? 'border-accent/20 bg-surface text-accent-strong shadow-[0_2px_10px_-2px_rgb(226_89_11/0.32)] hover:border-accent/50 hover:shadow-[0_4px_18px_-3px_rgb(226_89_11/0.5)]'
+	// Dark and inverted, so the two controls that act on the notes read as
+	// deliberate against a page that is almost entirely warm paper. The toggle
+	// keeps its own tinted state — it reports something rather than doing it.
+	const skin = pressed
+		? 'border-accent/30 bg-accent-tint text-accent-strong'
+		: tone === 'accent'
+			? 'border-ink bg-ink text-paper shadow-lg hover:border-accent-strong hover:bg-accent-strong'
 			: 'border-line bg-surface/90 text-ink-muted shadow-lg hover:border-accent/40 hover:text-accent-strong'
 
 	return (
