@@ -43,6 +43,13 @@
       "when": 1788654892467,
       "tag": "0005_flashy_vanisher",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788790111736,
+      "tag": "0006_quiet_mephistopheles",
+      "breakpoints": true
     }
   ]
 }

@@ -139,8 +139,17 @@ export type DeviceRowType = typeof devices.$inferSelect
  * changes, every row here is stale or the wrong shape — a mismatch reads as a
  * cache miss and regenerates, rather than serving something malformed.
  */
-export const videoNotes = pgTable('video_notes', {
+export const videoNotes = pgTable(
+	'video_notes',
+	{
 	videoId: text('video_id').primaryKey(),
+	/**
+	 * Set to publish these notes at `sermondrop.app/<slug>`, free and with no
+	 * account. Null means the row is cache only. Deliberately a property of the
+	 * notes rather than a separate table: a sermon is either public or it is
+	 * not, and there is nothing else to say about it.
+	 */
+	slug: text('slug'),
 	notes: jsonb('notes').$type<SermonNotesType>().notNull(),
 	meta: jsonb('meta').$type<VideoMetaType>(),
 	notesVersion: integer('notes_version').notNull(),
@@ -150,7 +159,9 @@ export const videoNotes = pgTable('video_notes', {
 	updatedAt: timestamp('updated_at', { withTimezone: true })
 		.notNull()
 		.defaultNow(),
-})
+	},
+	table => [uniqueIndex('video_notes_slug_key').on(table.slug)],
+)
 
 /**
  * What an account owns. Deliberately carries no foreign key to `video_notes`:
