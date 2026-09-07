@@ -1,7 +1,7 @@
 'use client'
 
 import { formatTimestamp, timestampLink, timestampToSeconds } from '@/app/lib/youtube'
-import { PlayIcon } from './icons'
+import { YouTubeIcon } from './icons'
 import { Tooltip } from './tooltip'
 import { useVideoDialog } from './video-dialog'
 
@@ -67,9 +67,12 @@ export function TimestampPill({
 				}}
 				className={`${base} ${skin} hover:bg-accent-tint hover:text-accent-strong hover:border-accent/60 focus-visible:ring-accent/40 border-transparent focus-visible:ring-2 focus-visible:outline-none`}
 			>
-				{/* Always shown: a play mark that only appears once you are already
-				    hovering cannot tell you the timestamp is clickable. */}
-				<PlayIcon className="size-2.5 shrink-0" />
+				{/*
+				 * YouTube's own mark, in YouTube's own red. A generic play triangle
+				 * says "something happens"; this says what happens, which is the
+				 * whole reason to click a timestamp.
+				 */}
+				<YouTubeIcon className="text-youtube no-print size-4 shrink-0" />
 				{label}
 			</a>
 		</Tooltip>

@@ -12,6 +12,7 @@
 	--ink: #1a1815;
 	--ink-muted: #5c554c;
 	--ink-faint: #7c7468;
+	--ink-lift: #34302a;
 
 	/* Hairlines */
 	--line: #e8e1d7;
@@ -32,6 +33,7 @@
 	--color-ink: var(--ink);
 	--color-ink-muted: var(--ink-muted);
 	--color-ink-faint: var(--ink-faint);
+	--color-ink-lift: var(--ink-lift);
 
 	--color-line: var(--line);
 	--color-line-strong: var(--line-strong);
@@ -242,6 +244,11 @@ body {
 	}
 }
 
+/* The one colour in the app that is not ours: YouTube's own red. */
+@theme {
+	--color-youtube: #ff0000;
+}
+
 /* Notes prose rhythm */
 .note-body {
 	text-wrap: pretty;
@@ -265,6 +272,19 @@ body {
 }
 
 @media print {
+	/*
+	 * Zero page margin is the only lever that suppresses the browser's own
+	 * date / title / URL headers, so the sheet's own breathing room has to be
+	 * padding instead.
+	 */
+	@page {
+		margin: 0;
+	}
+
+	body {
+		padding: 0.6in 0.75in;
+	}
+
 	.no-print {
 		display: none !important;
 	}

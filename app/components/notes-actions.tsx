@@ -214,7 +214,7 @@ function FloatingButton({
 	const skin = pressed
 		? 'border-accent/30 bg-accent-tint text-accent-strong'
 		: tone === 'accent'
-			? 'border-ink bg-ink text-paper shadow-lg hover:border-accent-strong hover:bg-accent-strong'
+			? 'border-ink bg-ink text-paper hover:border-ink-lift hover:bg-ink-lift shadow-lg'
 			: 'border-line bg-surface/90 text-ink-muted shadow-lg hover:border-accent/40 hover:text-accent-strong'
 
 	return (

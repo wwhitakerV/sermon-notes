@@ -5,6 +5,7 @@ import type { SermonNotesType, VideoMetaType } from '@/app/types'
 import {
 	formatSeconds,
 	formatTimestamp,
+	timestampLink,
 	timestampToSeconds,
 } from '@/app/lib/youtube'
 import { dedupeBy, scriptureKey } from '@/app/lib/partial-notes'
@@ -200,7 +201,7 @@ export function NotesView({
 									}}
 									className="hover:text-accent-strong no-print inline-flex items-center gap-1.5 transition-colors"
 								>
-									<YouTubeIcon className="size-4" />
+									<YouTubeIcon className="text-youtube size-4" />
 									Watch the sermon
 								</a>
 							</>
@@ -350,25 +351,12 @@ export function NotesView({
 
 								<ul className="border-line bg-surface mt-6 divide-line divide-y divide-dashed overflow-hidden rounded-xl border">
 									{scriptures.map((entry, index) => (
-										<li
+										<ScriptureRow
 											key={`${entry.reference}-${entry.timestamp}-${index}`}
-											className="hover:bg-accent-tint/40 flex items-center gap-3 px-4 py-2.5 transition-colors"
-										>
-											<span className="font-serif text-[0.9375rem]">
-												{entry.reference}
-											</span>
-											<span
-												aria-hidden
-												className="border-line-strong mt-2.5 flex-1 border-b border-dotted"
-											/>
-											{entry.timestamp && (
-												<TimestampPill
-													timestamp={entry.timestamp}
-													videoId={videoId}
-													title={notes.title || meta?.title}
-												/>
-											)}
-										</li>
+											entry={entry}
+											videoId={videoId}
+											title={notes.title || meta?.title}
+										/>
 									))}
 								</ul>
 							</section>
@@ -541,6 +529,83 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 			</h2>
 			<span className="bg-line h-px flex-1" />
 		</div>
+	)
+}
+
+/**
+ * One line of the Scripture index, clickable end to end.
+ *
+ * The whole row is the link — not just the timestamp — because the reference
+ * and the moment it was read are the same thing to a reader, and a two-word
+ * target at the far right of a wide row is a poor one.
+ */
+function ScriptureRow({
+	entry,
+	videoId,
+	title,
+}: {
+	entry: SermonNotesType['scripturesReferenced'][number]
+	videoId: string | null
+	title?: string | null
+}) {
+	const { openVideo } = useVideoDialog()
+
+	const href = timestampLink(videoId, entry.timestamp)
+
+	const body = (
+		<>
+			<span className="font-serif text-[0.9375rem]">{entry.reference}</span>
+			<span
+				aria-hidden
+				className="border-line-strong mt-2.5 flex-1 border-b border-dotted"
+			/>
+			{entry.timestamp && (
+				<span className="text-ink-faint inline-flex shrink-0 items-center gap-1.5 font-mono text-xs tabular-nums">
+					{/*
+					 * Muted at rest. Every row here is clickable, so a red mark on
+					 * each one distinguishes nothing and reads as texture; it earns
+					 * its colour on the row you are actually pointing at.
+					 */}
+					<YouTubeIcon className="no-print group-hover/row:text-youtube size-4 shrink-0 transition-colors" />
+					{formatTimestamp(entry.timestamp)}
+				</span>
+			)}
+		</>
+	)
+
+	if (!href || !videoId) {
+		return <li className="flex items-center gap-3 px-4 py-2.5">{body}</li>
+	}
+
+	return (
+		<li>
+			<a
+				href={href}
+				target="_blank"
+				rel="noreferrer"
+				onClick={event => {
+					if (
+						event.metaKey ||
+						event.ctrlKey ||
+						event.shiftKey ||
+						event.altKey ||
+						event.button !== 0
+					) {
+						return
+					}
+
+					event.preventDefault()
+					openVideo({
+						videoId,
+						seconds: timestampToSeconds(entry.timestamp),
+						title,
+					})
+				}}
+				className="group/row hover:bg-accent-tint/40 focus-visible:ring-accent/40 flex cursor-pointer items-center gap-3 px-4 py-2.5 transition-colors focus-visible:ring-2 focus-visible:outline-none focus-visible:-outline-offset-2"
+			>
+				{body}
+			</a>
+		</li>
 	)
 }
 

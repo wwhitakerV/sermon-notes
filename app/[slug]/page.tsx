@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { ArrowRightIcon } from '@/app/components/icons'
 import { SiteHeader } from '@/app/components/site-header'
 import { listPublicSermons, readPublicSermon } from '@/app/lib/public-sermons'
 import { isReservedSlug } from '@/app/lib/slug'
@@ -77,27 +76,6 @@ export default async function PublicSermonPage({
 			<PublicNotes notes={sermon.notes} meta={sermon.meta} />
 
 			<div className="mx-auto w-full max-w-5xl px-6 pb-24">
-				<div className="border-accent bg-surface rounded-r-xl border-l-2 py-6 pr-6 pl-6 shadow-[0_1px_2px_rgb(26_24_21/0.04)]">
-					<p className="text-ink-faint text-[0.6875rem] font-medium tracking-[0.14em] uppercase">
-						These notes were made by Sermon Drop
-					</p>
-					<p className="font-serif mt-3 text-[1.25rem] leading-snug font-medium text-balance">
-						Do this with any sermon. Your first one is free.
-					</p>
-					<p className="text-ink-muted mt-2 text-[0.9375rem] text-pretty">
-						Paste a YouTube link and get the outline, every Scripture with a
-						timestamp, applications and reflection questions — in about fifteen
-						seconds.
-					</p>
-					<Link
-						href="/"
-						className="bg-accent-strong shadow-accent/25 hover:bg-accent mt-5 inline-flex items-center gap-2 rounded-xl px-5 py-3 text-[0.9375rem] font-semibold text-white shadow-lg transition-all hover:shadow-xl"
-					>
-						Take notes on a sermon
-						<ArrowRightIcon className="size-4" />
-					</Link>
-				</div>
-
 				{others.length > 0 && (
 					<div className="mt-12">
 						<div className="flex items-center gap-4">
