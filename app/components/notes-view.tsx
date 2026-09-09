@@ -152,7 +152,7 @@ export function NotesView({
 		<div className="animate-fade">
 			<div className="mx-auto w-full max-w-5xl px-6 pb-28">
 				<header className="pt-12 sm:pt-16">
-					<div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-10">
+					<div className="flex flex-col gap-6 md:flex-row md:items-center md:gap-10">
 						<SermonPoster
 							videoId={videoId}
 							thumbnail={meta?.thumbnail ?? null}
@@ -587,13 +587,13 @@ function SermonPoster({
 				event.preventDefault()
 				openVideo({ videoId, seconds: null, title })
 			}}
-			className="group/poster border-line bg-paper-sunk no-print focus-visible:ring-accent/40 relative block aspect-video w-full shrink-0 overflow-hidden rounded-xl border shadow-[0_1px_3px_rgb(26_24_21/0.06)] transition-shadow duration-200 hover:shadow-[0_4px_16px_rgb(26_24_21/0.10)] focus-visible:ring-2 focus-visible:outline-none md:order-last md:w-64 lg:w-80"
+			className="group/poster border-line bg-paper-sunk no-print focus-visible:ring-accent/40 relative block aspect-video w-full shrink-0 overflow-hidden rounded-xl border shadow-[0_1px_3px_rgb(26_24_21/0.06)] transition-shadow duration-200 hover:shadow-[0_4px_16px_rgb(26_24_21/0.10)] focus-visible:ring-2 focus-visible:outline-none md:order-last md:w-72 lg:w-96"
 		>
 			<Image
 				src={maxResFailed ? fallback : posterUrl(videoId)}
 				alt=""
 				fill
-				sizes="(min-width: 1024px) 20rem, (min-width: 768px) 16rem, 100vw"
+				sizes="(min-width: 1024px) 24rem, (min-width: 768px) 18rem, 100vw"
 				className="object-cover transition-transform duration-500 group-hover/poster:scale-[1.03]"
 				unoptimized
 				onError={() => setMaxResFailed(true)}
