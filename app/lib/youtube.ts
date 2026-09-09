@@ -63,6 +63,14 @@ export function thumbnailUrl(videoId: string): string {
 	return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
 }
 
+/**
+ * The 1280x720 still, for when the thumbnail is shown large. Not every upload
+ * has one, so callers must fall back to `thumbnailUrl` if it 404s.
+ */
+export function posterUrl(videoId: string): string {
+	return `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`
+}
+
 /** `H:MM:SS` or `MM:SS`, wherever it sits in the string. */
 const CLOCK = /(\d{1,3}):([0-5]\d)(?::([0-5]\d))?/
 

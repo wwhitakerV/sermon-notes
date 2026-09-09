@@ -1,15 +1,19 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { SermonNotesType, VideoMetaType } from '@/app/types'
 import {
 	formatSeconds,
 	formatTimestamp,
+	posterUrl,
+	thumbnailUrl,
 	timestampLink,
 	timestampToSeconds,
+	watchUrl,
 } from '@/app/lib/youtube'
 import { dedupeBy, scriptureKey } from '@/app/lib/partial-notes'
-import { YouTubeIcon } from './icons'
+import { PlayIcon, YouTubeIcon } from './icons'
 import { NotesActions } from './notes-actions'
 import { useVideoDialog } from './video-dialog'
 import { useActiveSection } from './use-active-section'
@@ -148,64 +152,75 @@ export function NotesView({
 		<div className="animate-fade">
 			<div className="mx-auto w-full max-w-5xl px-6 pb-28">
 				<header className="pt-12 sm:pt-16">
-					<Eyebrow>Sermon notes</Eyebrow>
+					<div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-10">
+						<SermonPoster
+							videoId={videoId}
+							thumbnail={meta?.thumbnail ?? null}
+							durationSeconds={meta?.durationSeconds ?? null}
+							title={notes.title || meta?.title}
+						/>
 
-					{notes.title ? (
-						<h1 className="font-serif mt-5 text-[1.75rem] leading-[1.12] font-medium tracking-tight text-balance sm:text-[2.5rem] lg:text-[2.875rem]">
-							<StreamedText
-								text={notes.title}
-								animate={animating}
-								caret={caretKey === 'title'}
-							/>
-						</h1>
-					) : (
-						<div className="mt-5 space-y-3" aria-hidden>
-							<SkeletonBar className="h-8 w-4/5 sm:h-10" />
-							<SkeletonBar className="h-8 w-3/5 sm:h-10" />
+						<div className="min-w-0 flex-1">
+							<Eyebrow>Sermon notes</Eyebrow>
+
+							{notes.title ? (
+								<h1 className="font-serif mt-5 text-[1.75rem] leading-[1.12] font-medium tracking-tight text-balance sm:text-[2.5rem] lg:text-[2.875rem]">
+									<StreamedText
+										text={notes.title}
+										animate={animating}
+										caret={caretKey === 'title'}
+									/>
+								</h1>
+							) : (
+								<div className="mt-5 space-y-3" aria-hidden>
+									<SkeletonBar className="h-8 w-4/5 sm:h-10" />
+									<SkeletonBar className="h-8 w-3/5 sm:h-10" />
+								</div>
+							)}
+
+							<div className="text-ink-muted mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+								{meta?.author && <span>{meta.author}</span>}
+								{meta?.durationSeconds && (
+									<>
+										<Dot />
+										<span className="font-mono text-xs tabular-nums">
+											{formatSeconds(meta.durationSeconds)}
+										</span>
+									</>
+								)}
+								{meta?.url && videoId && (
+									<>
+										<Dot />
+										<a
+											href={meta.url}
+											target="_blank"
+											rel="noreferrer"
+											onClick={event => {
+												if (
+													event.metaKey ||
+													event.ctrlKey ||
+													event.shiftKey ||
+													event.altKey
+												) {
+													return
+												}
+
+												event.preventDefault()
+												openVideo({
+													videoId,
+													seconds: null,
+													title: notes.title || meta.title,
+												})
+											}}
+											className="hover:text-accent-strong no-print inline-flex items-center gap-1.5 transition-colors"
+										>
+											<YouTubeIcon className="text-youtube size-4" />
+											Watch the sermon
+										</a>
+									</>
+								)}
+							</div>
 						</div>
-					)}
-
-					<div className="text-ink-muted mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-						{meta?.author && <span>{meta.author}</span>}
-						{meta?.durationSeconds && (
-							<>
-								<Dot />
-								<span className="font-mono text-xs tabular-nums">
-									{formatSeconds(meta.durationSeconds)}
-								</span>
-							</>
-						)}
-						{meta?.url && videoId && (
-							<>
-								<Dot />
-								<a
-									href={meta.url}
-									target="_blank"
-									rel="noreferrer"
-									onClick={event => {
-										if (
-											event.metaKey ||
-											event.ctrlKey ||
-											event.shiftKey ||
-											event.altKey
-										) {
-											return
-										}
-
-										event.preventDefault()
-										openVideo({
-											videoId,
-											seconds: null,
-											title: notes.title || meta.title,
-										})
-									}}
-									className="hover:text-accent-strong no-print inline-flex items-center gap-1.5 transition-colors"
-								>
-									<YouTubeIcon className="text-youtube size-4" />
-									Watch the sermon
-								</a>
-							</>
-						)}
 					</div>
 
 					{mainTexts.length > 0 && (
@@ -529,6 +544,81 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 			</h2>
 			<span className="bg-line h-px flex-1" />
 		</div>
+	)
+}
+
+/**
+ * The video still, beside the title on desktop and above it on mobile.
+ *
+ * It is a real link to YouTube so middle-click and keyboard both work, but a
+ * plain click opens the inline player like every other video affordance here.
+ * Decorative on paper, so it does not print.
+ */
+function SermonPoster({
+	videoId,
+	thumbnail,
+	durationSeconds,
+	title,
+}: {
+	videoId: string | null
+	thumbnail: string | null
+	durationSeconds: number | null
+	title?: string | null
+}) {
+	const { openVideo } = useVideoDialog()
+
+	/* maxres is missing on plenty of uploads; drop to the oEmbed still on 404. */
+	const [maxResFailed, setMaxResFailed] = useState(false)
+
+	if (!videoId) return null
+
+	const fallback = thumbnail ?? thumbnailUrl(videoId)
+
+	return (
+		<a
+			href={watchUrl(videoId)}
+			target="_blank"
+			rel="noreferrer"
+			onClick={event => {
+				if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+					return
+				}
+
+				event.preventDefault()
+				openVideo({ videoId, seconds: null, title })
+			}}
+			className="group/poster border-line bg-paper-sunk no-print focus-visible:ring-accent/40 relative block aspect-video w-full shrink-0 overflow-hidden rounded-xl border shadow-[0_1px_3px_rgb(26_24_21/0.06)] transition-shadow duration-200 hover:shadow-[0_4px_16px_rgb(26_24_21/0.10)] focus-visible:ring-2 focus-visible:outline-none md:order-last md:w-64 lg:w-80"
+		>
+			<Image
+				src={maxResFailed ? fallback : posterUrl(videoId)}
+				alt=""
+				fill
+				sizes="(min-width: 1024px) 20rem, (min-width: 768px) 16rem, 100vw"
+				className="object-cover transition-transform duration-500 group-hover/poster:scale-[1.03]"
+				unoptimized
+				onError={() => setMaxResFailed(true)}
+			/>
+
+			<span
+				aria-hidden
+				className="absolute inset-0 flex items-center justify-center"
+			>
+				<span className="bg-paper/55 group-hover/poster:bg-paper/80 flex size-9 items-center justify-center rounded-full backdrop-blur-[2px] transition-colors duration-200">
+					<PlayIcon className="text-ink/60 group-hover/poster:text-ink ml-0.5 size-3.5 transition-colors duration-200" />
+				</span>
+			</span>
+
+			{durationSeconds && (
+				<span
+					aria-hidden
+					className="absolute right-2 bottom-2 rounded bg-black/70 px-1.5 py-0.5 font-mono text-[0.6875rem] text-white tabular-nums"
+				>
+					{formatSeconds(durationSeconds)}
+				</span>
+			)}
+
+			<span className="sr-only">Watch the sermon</span>
+		</a>
 	)
 }
 
