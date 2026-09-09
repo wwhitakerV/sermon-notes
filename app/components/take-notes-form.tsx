@@ -12,7 +12,7 @@ import { NotesPreview } from './notes-preview'
  * realise they do not have a sermon link to hand. Already in the cache, so it
  * comes back fast and costs nothing to serve.
  */
-const SAMPLE_URL = 'https://www.youtube.com/watch?v=eSXzUDh7o60'
+const SAMPLE_URL = 'https://www.youtube.com/watch?v=pgrbqckDpQg'
 
 const URL_FIELD_ID = 'sermon-url'
 

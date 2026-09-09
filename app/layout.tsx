@@ -4,6 +4,7 @@ import { Fraunces, Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { AccountProvider } from './components/account-provider'
 import { ReturnToPrompt } from './components/return-to-prompt'
+import { SiteAnalytics } from './components/site-analytics'
 import { SiteFooter } from './components/site-footer'
 import { VideoDialogProvider } from './components/video-dialog'
 import { readAccountState } from './lib/account-state'
@@ -46,6 +47,8 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
 						</Suspense>
 					</VideoDialogProvider>
 				</AccountProvider>
+
+				<SiteAnalytics />
 			</body>
 		</html>
 	)
