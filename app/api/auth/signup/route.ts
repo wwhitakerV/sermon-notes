@@ -5,6 +5,7 @@ import {
 	createUser,
 	findUserByEmail,
 } from '@/app/lib/auth/accounts'
+import { logEvent } from '@/app/lib/analytics/events'
 import { ensureDevice, linkDeviceToUser, readDeviceId } from '@/app/lib/auth/device'
 import { verifyPassword } from '@/app/lib/auth/password'
 import { createSession } from '@/app/lib/auth/session'
@@ -55,6 +56,10 @@ export async function POST(request: Request) {
 			)
 		}
 
+		// Signing up with an account you already have is a sign-in, and counting
+		// it as a signup would overstate every conversion rate here.
+		await logEvent('signin_succeeded', { deviceId, userId: existing.id })
+
 		return signedIn(existing, deviceId)
 	}
 
@@ -69,6 +74,8 @@ export async function POST(request: Request) {
 	if (deviceId) {
 		await linkDeviceToUser(deviceId, user.id)
 	}
+
+	await logEvent('signup_succeeded', { deviceId, userId: user.id })
 
 	return signedIn(user, deviceId)
 }

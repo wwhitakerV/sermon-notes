@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { logEvent } from '@/app/lib/analytics/events'
 import { readDeviceId } from '@/app/lib/auth/device'
 import { currentUser } from '@/app/lib/auth/session'
 import { claimGeneration, refundGeneration } from '@/app/lib/entitlement'
@@ -26,6 +27,8 @@ type RunOptionsType = {
 	url: string
 	videoId: string
 	userId: string | null
+	/** The browser, whether or not anyone is signed in. */
+	deviceId: string | null
 	/** Null when the run is free because the account already owns the notes. */
 	grant: GrantType | null
 	/**
@@ -48,8 +51,11 @@ export async function POST(req: NextRequest) {
 	// Checked here rather than inside the pipeline, so a mistyped link is never
 	// charged for.
 	const videoId = extractVideoId(url)
+	const deviceId = await readDeviceId()
 
 	if (!videoId) {
+		await logEvent('link_rejected', { deviceId })
+
 		return NextResponse.json(
 			{ error: "That doesn't look like a YouTube link.", code: 'invalid_url' },
 			{ status: 400 },
@@ -57,6 +63,12 @@ export async function POST(req: NextRequest) {
 	}
 
 	const user = await currentUser()
+
+	await logEvent('link_submitted', {
+		deviceId,
+		userId: user?.id ?? null,
+		videoId,
+	})
 
 	// Notes this account already paid for are theirs. Re-opening a sermon from
 	// the library never costs a second token.
@@ -66,20 +78,24 @@ export async function POST(req: NextRequest) {
 		url,
 		videoId,
 		userId: user?.id ?? null,
+		deviceId,
 		grant: null,
 		locked: !user,
 	}
 
 	if (!owned) {
-		const claim = await claimGeneration({
-			user,
-			deviceId: await readDeviceId(),
-			videoId,
-		})
+		const claim = await claimGeneration({ user, deviceId, videoId })
 
 		// 402 is answered before the stream opens: once a response starts
 		// streaming its status is already on the wire and cannot be taken back.
 		if (!claim.ok) {
+			await logEvent('paywall_shown', {
+				deviceId,
+				userId: user?.id ?? null,
+				videoId,
+				props: { reason: claim.reason, balance: claim.balance },
+			})
+
 			return NextResponse.json(
 				{
 					error:
@@ -104,6 +120,8 @@ export async function POST(req: NextRequest) {
 	try {
 		const { notes } = await performRun(options)
 
+		await logDelivery(options)
+
 		return NextResponse.json(
 			options.locked
 				? { status: 'locked', videoId }
@@ -115,6 +133,13 @@ export async function POST(req: NextRequest) {
 		await refund(options.grant)
 
 		const { code, message } = describeError(error)
+
+		await logEvent('run_failed', {
+			deviceId: options.deviceId,
+			userId: options.userId,
+			videoId,
+			props: { code },
+		})
 
 		return NextResponse.json(
 			{ error: message, code },
@@ -134,6 +159,14 @@ async function performRun(
 ): Promise<RunResultType> {
 	const cached = await readCachedNotes(options.videoId)
 
+	// Whether this run cost anything to serve. Cache hits are the whole margin.
+	await logEvent('run_started', {
+		deviceId: options.deviceId,
+		userId: options.userId,
+		videoId: options.videoId,
+		props: { cached: Boolean(cached), locked: options.locked },
+	})
+
 	let result: RunResultType
 
 	if (cached) {
@@ -152,6 +185,22 @@ async function performRun(
 	}
 
 	return result
+}
+
+/**
+ * The end of a run, from the reader's side: either they have the notes or they
+ * have the opening and a sign-in prompt. Shared so the streaming and plain
+ * paths cannot drift apart on what they count.
+ */
+async function logDelivery(options: RunOptionsType): Promise<void> {
+	await logEvent(options.locked ? 'gate_shown' : 'notes_delivered', {
+		deviceId: options.deviceId,
+		userId: options.userId,
+		videoId: options.videoId,
+		props: options.locked
+			? undefined
+			: { source: options.grant?.source ?? 'owned' },
+	})
 }
 
 /**
@@ -204,6 +253,7 @@ function streamSermonNotes(options: RunOptionsType) {
 				if (!lockedSent) {
 					lockedSent = true
 					send({ type: 'locked', videoId: options.videoId })
+					void logDelivery(options)
 				}
 			}
 
@@ -278,6 +328,7 @@ function streamSermonNotes(options: RunOptionsType) {
 				.then(({ notes }) => {
 					if (!options.locked) {
 						send({ type: 'complete', notes })
+						void logDelivery(options)
 
 						return
 					}
@@ -299,7 +350,16 @@ function streamSermonNotes(options: RunOptionsType) {
 						send({ type: 'balance', tokenBalance: restored })
 					}
 
+					const { code } = describeError(error)
+
 					send({ type: 'error', ...describeError(error) })
+
+					void logEvent('run_failed', {
+						deviceId: options.deviceId,
+						userId: options.userId,
+						videoId: options.videoId,
+						props: { code },
+					})
 				})
 				.finally(close)
 		},

@@ -61,7 +61,7 @@ export function NotesPreview() {
 							{section.notes.map(note => (
 								<li key={note} className="flex gap-3">
 									<span className="bg-accent/40 mt-[0.6em] size-1 shrink-0 rounded-full" />
-									<span className="text-ink-muted text-[0.875rem] leading-[1.6] text-pretty">
+									<span className="text-[0.875rem] leading-[1.6] text-pretty">
 										{note}
 									</span>
 								</li>
@@ -90,7 +90,7 @@ export function NotesPreview() {
 						{notes.keyTakeaways.map(item => (
 							<li key={item} className="flex gap-3">
 								<span className="bg-accent/40 mt-[0.6em] size-1 shrink-0 rounded-full" />
-								<span className="text-ink-muted text-[0.875rem] leading-[1.6] text-pretty">
+								<span className="text-[0.875rem] leading-[1.6] text-pretty">
 									{item}
 								</span>
 							</li>
@@ -106,7 +106,7 @@ export function NotesPreview() {
 								<span className="text-ink-faint shrink-0 font-mono text-[0.6875rem] tabular-nums">
 									{String(index + 1).padStart(2, '0')}
 								</span>
-								<span className="text-ink-muted text-[0.875rem] leading-[1.6] text-pretty">
+								<span className="text-[0.875rem] leading-[1.6] text-pretty">
 									{question}
 								</span>
 							</li>

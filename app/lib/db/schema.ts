@@ -203,6 +203,12 @@ export const feedback = pgTable('feedback', {
 	/** 1–5. Enforced in the route; kept loose here so a future scale can differ. */
 	rating: integer('rating').notNull(),
 	comment: text('comment'),
+	/**
+	 * Typed into the form, not read from the account. Optional, and kept apart
+	 * from `userId` on purpose: most feedback comes from people who never signed
+	 * up, and someone signed in may still want a reply somewhere else.
+	 */
+	email: text('email'),
 	path: text('path'),
 	createdAt: timestamp('created_at', { withTimezone: true })
 		.notNull()
@@ -246,3 +252,47 @@ export const rateLimits = pgTable('rate_limits', {
 		.notNull()
 		.defaultNow(),
 })
+
+/**
+ * Product analytics, written from the server.
+ *
+ * The whole first run happens on `/` — pasting a link, waiting, hitting the
+ * account wall — so route-based analytics sees one page view and can say
+ * nothing about where people stop. Every one of those steps already crosses a
+ * route handler, though, which is what this records.
+ *
+ * Three identities, deliberately:
+ *
+ *   `deviceId`  the year-long `sn_device` cookie, which survives sign-out and
+ *               is what `devices.linkedUserId` later ties to an account. It is
+ *               how a purchase can be traced back to a visit that happened
+ *               before the account existed.
+ *   `userId`    null means signed out *at the time*. Never backfilled — that a
+ *               reader was anonymous when they hit the wall is the finding.
+ *   nothing     no session column. Visits are computed at read time from the
+ *               gaps between `occurredAt`, so the definition of a session can
+ *               change later without the recorded rows being wrong.
+ *
+ * No foreign key on `deviceId`: device rows are written lazily on first spend,
+ * so an event can legitimately arrive before one exists.
+ */
+export const events = pgTable(
+	'events',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		occurredAt: timestamp('occurred_at', { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		name: text('name').notNull(),
+		deviceId: uuid('device_id'),
+		userId: uuid('user_id').references(() => users.id, {
+			onDelete: 'set null',
+		}),
+		videoId: text('video_id'),
+		props: jsonb('props').$type<Record<string, unknown>>(),
+	},
+	table => [
+		index('events_device_time_idx').on(table.deviceId, table.occurredAt),
+		index('events_name_time_idx').on(table.name, table.occurredAt),
+	],
+)

@@ -68,7 +68,7 @@ export function TakeNotesForm({
 					.
 				</h1>
 
-				<p className="text-ink-muted mx-auto mt-5 max-w-md text-[1.0625rem] leading-relaxed text-pretty">
+				<p className="mx-auto mt-5 max-w-md text-[1.0625rem] leading-relaxed text-pretty">
 					Paste a YouTube link and get notes you&rsquo;ll actually come back to.
 					It takes less than 15 seconds per sermon.
 				</p>

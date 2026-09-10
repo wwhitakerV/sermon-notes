@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { accountStateFor } from '@/app/lib/account-state'
+import { logEvent } from '@/app/lib/analytics/events'
+import { readDeviceId } from '@/app/lib/auth/device'
 import { currentUser } from '@/app/lib/auth/session'
 import { grantForIntent, markIntentFailed, rememberCard } from '@/app/lib/billing'
 import { getDb, users } from '@/app/lib/db'
@@ -54,13 +56,31 @@ export async function POST(request: Request) {
 			await markIntentFailed(intent)
 		}
 
+		await logEvent('purchase_failed', {
+			deviceId: await readDeviceId(),
+			userId: user.id,
+			props: { status: intent.status },
+		})
+
 		return NextResponse.json(
 			{ error: 'That payment did not go through.', code: 'payment_failed' },
 			{ status: 402 },
 		)
 	}
 
-	await grantForIntent(intent)
+	// True only from whichever of this and the webhook actually claimed the
+	// charge, so the purchase is counted exactly once however the race lands.
+	if (await grantForIntent(intent)) {
+		await logEvent('purchase_succeeded', {
+			deviceId: await readDeviceId(),
+			userId: user.id,
+			props: {
+				cents: intent.amount,
+				tokens: Number(intent.metadata?.tokens) || null,
+			},
+		})
+	}
+
 	await rememberCard(user.id, intent)
 
 	const [fresh] = await getDb().select().from(users).where(eq(users.id, user.id))

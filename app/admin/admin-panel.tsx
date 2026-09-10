@@ -67,17 +67,16 @@ export function AdminPanel({ sermons }: { sermons: CachedSermonType[] }) {
 	const cached = sermons.filter(sermon => !sermon.slug)
 
 	return (
-		<div className="space-y-8">
+		<div className="grid gap-6 lg:grid-cols-2 lg:items-start lg:gap-8">
 			<form
 				onSubmit={publish}
-				className="border-line bg-surface rounded-2xl border p-5"
+				className="border-line bg-surface rounded-2xl border p-5 lg:sticky lg:top-20"
 			>
 				<h2 className="text-ink-faint text-[0.6875rem] font-medium tracking-[0.14em] uppercase">
 					Publish a sermon
 				</h2>
-				<p className="text-ink-muted mt-2 text-[0.875rem] text-pretty">
-					Generates it if it is not cached yet, then puts it online free at the
-					address below. No token is spent.
+				<p className="text-ink-muted mt-1.5 text-[0.8125rem] text-pretty">
+					Generates it if uncached, then puts it online free. No token spent.
 				</p>
 
 				<div className="mt-4 space-y-2.5">
@@ -136,59 +135,61 @@ export function AdminPanel({ sermons }: { sermons: CachedSermonType[] }) {
 					disabled={busy}
 					className="bg-accent-strong shadow-accent/25 hover:bg-accent disabled:bg-paper-sunk disabled:text-ink-faint mt-4 flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-[0.9375rem] font-semibold text-white shadow-lg transition-all hover:shadow-xl disabled:shadow-none"
 				>
-					{busy ? 'Working — this can take a minute…' : 'Publish'}
+					{busy ? 'Working…' : 'Publish'}
 					{!busy && <ArrowRightIcon className="size-4" />}
 				</button>
 			</form>
 
-			<Section title={`Published (${published.length})`}>
-				{published.length === 0 ? (
-					<Empty>Nothing published yet.</Empty>
-				) : (
-					published.map(sermon => (
-						<Row key={sermon.videoId} sermon={sermon}>
-							<Link
-								href={`/${sermon.slug}`}
-								className="text-accent-strong font-mono text-[0.75rem] underline underline-offset-2"
-							>
-								/{sermon.slug}
-							</Link>
-							<button
-								type="button"
-								onClick={() => unpublish(sermon.videoId)}
-								className="border-line text-ink-muted hover:border-accent/50 hover:text-accent-strong ml-auto shrink-0 rounded-lg border px-2.5 py-1 text-[0.75rem] transition-colors"
-							>
-								Unpublish
-							</button>
-						</Row>
-					))
-				)}
-			</Section>
+			<div className="space-y-8">
+				<Section title={`Published (${published.length})`}>
+					{published.length === 0 ? (
+						<Empty>Nothing published yet.</Empty>
+					) : (
+						published.map(sermon => (
+							<Row key={sermon.videoId} sermon={sermon}>
+								<Link
+									href={`/${sermon.slug}`}
+									className="text-accent-strong font-mono text-[0.75rem] underline underline-offset-2"
+								>
+									/{sermon.slug}
+								</Link>
+								<button
+									type="button"
+									onClick={() => unpublish(sermon.videoId)}
+									className="border-line text-ink-muted hover:border-accent/50 hover:text-accent-strong ml-auto shrink-0 rounded-lg border px-2.5 py-1 text-[0.75rem] transition-colors"
+								>
+									Unpublish
+								</button>
+							</Row>
+						))
+					)}
+				</Section>
 
-			<Section title={`Cached, not published (${cached.length})`}>
-				{cached.length === 0 ? (
-					<Empty>Everything cached is published.</Empty>
-				) : (
-					cached.map(sermon => (
-						<Row key={sermon.videoId} sermon={sermon}>
-							<span className="text-ink-faint font-mono text-[0.75rem]">
-								{sermon.videoId}
-							</span>
-							<button
-								type="button"
-								onClick={() => {
-									setUrl(`https://youtube.com/watch?v=${sermon.videoId}`)
-									setSlug('')
-									window.scrollTo({ top: 0 })
-								}}
-								className="border-line text-ink-muted hover:border-accent/50 hover:text-accent-strong ml-auto shrink-0 rounded-lg border px-2.5 py-1 text-[0.75rem] transition-colors"
-							>
-								Publish
-							</button>
-						</Row>
-					))
-				)}
-			</Section>
+				<Section title={`Cached, not published (${cached.length})`}>
+					{cached.length === 0 ? (
+						<Empty>Everything cached is published.</Empty>
+					) : (
+						cached.map(sermon => (
+							<Row key={sermon.videoId} sermon={sermon}>
+								<span className="text-ink-faint font-mono text-[0.75rem]">
+									{sermon.videoId}
+								</span>
+								<button
+									type="button"
+									onClick={() => {
+										setUrl(`https://youtube.com/watch?v=${sermon.videoId}`)
+										setSlug('')
+										window.scrollTo({ top: 0 })
+									}}
+									className="border-line text-ink-muted hover:border-accent/50 hover:text-accent-strong ml-auto shrink-0 rounded-lg border px-2.5 py-1 text-[0.75rem] transition-colors"
+								>
+									Publish
+								</button>
+							</Row>
+						))
+					)}
+				</Section>
+			</div>
 		</div>
 	)
 }

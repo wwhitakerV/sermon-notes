@@ -76,7 +76,7 @@ export function SettingsPanel({ memberSince }: { memberSince: string }) {
 								? 'No tokens left'
 								: `${account.tokenBalance} ${account.tokenBalance === 1 ? 'token' : 'tokens'} left`}
 						</p>
-						<p className="text-ink-muted mt-1 text-[0.9375rem] leading-snug text-pretty">
+						<p className="mt-1 text-[0.9375rem] leading-snug text-pretty">
 							{empty
 								? 'Add more with the tokens button in the header.'
 								: `Enough for ${account.tokenBalance} more ${account.tokenBalance === 1 ? 'sermon' : 'sermons'}. One token, one sermon.`}

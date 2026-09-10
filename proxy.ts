@@ -4,6 +4,12 @@ import {
 	DEVICE_COOKIE_MAX_AGE,
 } from '@/app/lib/auth/device-cookie'
 import { SESSION_COOKIE } from '@/app/lib/auth/session-cookie'
+import {
+	ATTRIBUTION_COOKIE,
+	ATTRIBUTION_COOKIE_MAX_AGE,
+	attributionFrom,
+	encodeAttribution,
+} from '@/app/lib/analytics/attribution-cookie'
 import { signInUrl } from '@/app/lib/return-to'
 import { signValue, unsignValue } from '@/app/lib/auth/signed-value'
 
@@ -46,38 +52,77 @@ export function proxy(request: NextRequest) {
 			request.url,
 		)
 
-	if (unsignValue(request.cookies.get(DEVICE_COOKIE)?.value)) {
-		return turnAway
-			? NextResponse.redirect(home())
-			: NextResponse.next()
+	const known = Boolean(unsignValue(request.cookies.get(DEVICE_COOKIE)?.value))
+	let signed: string | null = null
+
+	if (!known) {
+		signed = signValue(crypto.randomUUID())
+
+		// Handed to the current request as well as the browser, so a route handler
+		// reached before the browser has stored the cookie still sees the same id.
+		// Set rather than appended: a stale or forged value must not be left
+		// sitting ahead of the new one in the same `Cookie` header, where which id
+		// wins would come down to lookup order.
+		request.cookies.set(DEVICE_COOKIE, signed)
 	}
-
-	const signed = signValue(crypto.randomUUID())
-
-	// Handed to the current request as well as the browser, so a route handler
-	// reached before the browser has stored the cookie still sees the same id.
-	// Set rather than appended: a stale or forged value must not be left sitting
-	// ahead of the new one in the same `Cookie` header, where which id wins would
-	// come down to lookup order.
-	request.cookies.set(DEVICE_COOKIE, signed)
 
 	// Redirected or not, the visitor still leaves with a device id — it is what
 	// their free video is tracked against.
 	const response = turnAway
 		? NextResponse.redirect(home())
-		: NextResponse.next({ request })
+		: known
+			? NextResponse.next()
+			: NextResponse.next({ request })
+
+	if (signed) {
+		response.cookies.set({
+			name: DEVICE_COOKIE,
+			value: signed,
+			httpOnly: true,
+			sameSite: 'lax',
+			secure: process.env.NODE_ENV === 'production',
+			path: '/',
+			maxAge: DEVICE_COOKIE_MAX_AGE,
+		})
+	}
+
+	rememberAttribution(request, response)
+
+	return response
+}
+
+/**
+ * Where this visit came from, kept for the handlers that will record events
+ * during it. Attribution has to be caught here because by the time anything
+ * interesting happens the referrer is one of our own pages.
+ *
+ * Page navigations only. An asset or `fetch` carries our own page as its
+ * referrer and would otherwise overwrite the real source with noise.
+ */
+function rememberAttribution(request: NextRequest, response: NextResponse) {
+	if (!request.headers.get('accept')?.includes('text/html')) {
+		return
+	}
+
+	const attribution = attributionFrom(
+		request.nextUrl,
+		request.headers.get('referer'),
+	)
+
+	// This request says nothing new, so leave whatever the visit arrived with.
+	if (!attribution) {
+		return
+	}
 
 	response.cookies.set({
-		name: DEVICE_COOKIE,
-		value: signed,
+		name: ATTRIBUTION_COOKIE,
+		value: encodeAttribution(attribution),
 		httpOnly: true,
 		sameSite: 'lax',
 		secure: process.env.NODE_ENV === 'production',
 		path: '/',
-		maxAge: DEVICE_COOKIE_MAX_AGE,
+		maxAge: ATTRIBUTION_COOKIE_MAX_AGE,
 	})
-
-	return response
 }
 
 export const config = {

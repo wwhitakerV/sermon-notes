@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { accountStateFor } from '@/app/lib/account-state'
 import { findUserByEmail, loginSchema } from '@/app/lib/auth/accounts'
+import { logEvent } from '@/app/lib/analytics/events'
 import { readDeviceId } from '@/app/lib/auth/device'
 import { verifyPassword } from '@/app/lib/auth/password'
 import { createSession } from '@/app/lib/auth/session'
@@ -46,6 +47,8 @@ export async function POST(request: Request) {
 	}
 
 	await createSession(user.id)
+
+	await logEvent('signin_succeeded', { deviceId, userId: user.id })
 
 	return NextResponse.json(accountStateFor(user))
 }

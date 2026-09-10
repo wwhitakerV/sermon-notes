@@ -248,10 +248,10 @@ export function NotesView({
 						</div>
 					)}
 
-					<div className="border-accent bg-surface print-plain mt-8 rounded-r-xl border-l-2 py-5 pr-6 pl-6 shadow-[0_1px_2px_rgb(26_24_21/0.04)]">
+					<div className="border-accent bg-surface print-plain mt-8 max-w-[38rem] rounded-r-xl border-l-2 py-5 pr-6 pl-6 shadow-[0_1px_2px_rgb(26_24_21/0.04)]">
 						<Eyebrow>Big idea</Eyebrow>
 						{notes.mainIdea ? (
-							<p className="font-serif note-body mt-3 text-[1.0625rem] leading-[1.65] text-pretty sm:text-[1.1875rem]">
+							<p className="font-serif note-body mt-3 text-[1.125rem] leading-[1.6] text-pretty sm:text-[1.1875rem] lg:text-[1.25rem]">
 								<StreamedText
 									text={notes.mainIdea}
 									animate={animating}
@@ -268,10 +268,10 @@ export function NotesView({
 					</div>
 				</header>
 
-				<div className="mt-16 grid gap-12 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-14">
+				<div className="mt-16 grid gap-12 lg:grid-cols-[minmax(0,38rem)_1fr] lg:gap-14">
 					<Outline items={navItems} activeId={activeId} />
 
-					<div className="min-w-0">
+					<div className="w-full min-w-0 max-w-[38rem] lg:order-1">
 						<div
 							className={
 								clipped
@@ -330,7 +330,7 @@ export function NotesView({
 													aria-hidden
 													className="bg-accent/40 mt-[0.7em] size-1.5 shrink-0 rotate-45 rounded-[1px]"
 												/>
-												<p className="note-body text-ink-muted text-[0.9375rem] leading-[1.75]">
+												<p className="note-body text-[1rem] leading-[1.7] sm:text-[1.0625rem] lg:text-[1.125rem] lg:leading-[1.65]">
 													<StreamedText
 														text={note}
 														animate={animating}
@@ -344,7 +344,7 @@ export function NotesView({
 									{section.application && (
 										<div className="border-line bg-paper-sunk/60 print-plain mt-6 rounded-xl border px-5 py-4">
 											<Eyebrow>Practical Application</Eyebrow>
-											<p className="note-body mt-2 text-[0.9375rem] leading-[1.7]">
+											<p className="note-body mt-2 text-[1rem] leading-[1.7] sm:text-[1.0625rem] lg:text-[1.125rem] lg:leading-[1.65]">
 												<StreamedText
 													text={section.application}
 													animate={animating}
@@ -393,7 +393,7 @@ export function NotesView({
 											<span className="text-accent-strong/70 font-serif w-6 shrink-0 text-lg tabular-nums">
 												{index + 1}
 											</span>
-											<p className="note-body text-[0.9375rem] leading-[1.7]">
+											<p className="note-body text-[1rem] leading-[1.7] sm:text-[1.0625rem] lg:text-[1.125rem] lg:leading-[1.65]">
 												<StreamedText
 													text={takeaway}
 													animate={animating}
@@ -422,7 +422,7 @@ export function NotesView({
 											<span className="text-accent-strong/70 font-serif w-6 shrink-0 text-lg tabular-nums">
 												{index + 1}
 											</span>
-											<p className="note-body text-[0.9375rem] leading-[1.7]">
+											<p className="note-body text-[1rem] leading-[1.7] sm:text-[1.0625rem] lg:text-[1.125rem] lg:leading-[1.65]">
 												<StreamedText
 													text={question}
 													animate={animating}
@@ -475,7 +475,7 @@ function Outline({
 	activeId: string | null
 }) {
 	return (
-		<nav className="no-print hidden lg:block">
+		<nav className="no-print hidden lg:order-2 lg:block">
 			<div className="sticky top-20">
 				<Eyebrow>Outline</Eyebrow>
 

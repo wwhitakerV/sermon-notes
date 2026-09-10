@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { SiteHeader } from '@/app/components/site-header'
 import { currentAdmin } from '@/app/lib/admin'
 import { listCachedSermons } from '@/app/lib/public-sermons'
 import { AdminPanel } from './admin-panel'
@@ -11,28 +10,16 @@ export const metadata: Metadata = {
 }
 
 export default async function AdminPage() {
-	// A 404 rather than a redirect: someone who is not an admin has no reason to
-	// learn that this address means anything.
+	// Repeated from the layout on purpose: pages and layouts render in parallel,
+	// so without this the sermon list would be read for a visitor about to get a
+	// 404.
 	if (!(await currentAdmin())) {
 		notFound()
 	}
 
 	return (
-		<main className="flex flex-1 flex-col">
-			<SiteHeader />
-
-			<div className="mx-auto w-full max-w-2xl px-5 pt-6 pb-24 sm:px-6 sm:pt-10">
-				<h1 className="font-serif text-[1.75rem] leading-tight font-medium tracking-tight sm:text-[2.25rem]">
-					Admin
-				</h1>
-				<p className="text-ink-muted mt-2 text-[0.9375rem] text-pretty">
-					Free, public sermon pages for marketing.
-				</p>
-
-				<div className="mt-8">
-					<AdminPanel sermons={await listCachedSermons()} />
-				</div>
-			</div>
-		</main>
+		<div className="mt-8">
+			<AdminPanel sermons={await listCachedSermons()} />
+		</div>
 	)
 }

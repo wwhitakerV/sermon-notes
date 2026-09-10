@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
+import { useAccount } from './account-provider'
 import { AlertIcon, CheckIcon, CloseIcon, StarIcon } from './icons'
 
 const RATINGS = [1, 2, 3, 4, 5]
@@ -16,7 +17,11 @@ const LABELS: Record<number, string> = {
 
 export function FeedbackPrompt({ onDismiss }: { onDismiss: () => void }) {
 	const pathname = usePathname()
+	const { account } = useAccount()
 	const [rating, setRating] = useState(0)
+	// Prefilled for an account, still editable: someone may want the reply
+	// somewhere other than the address they signed up with.
+	const [email, setEmail] = useState(account?.email ?? '')
 	const [hovered, setHovered] = useState(0)
 	const [comment, setComment] = useState('')
 	const [busy, setBusy] = useState(false)
@@ -41,7 +46,7 @@ export function FeedbackPrompt({ onDismiss }: { onDismiss: () => void }) {
 			const response = await fetch('/api/feedback', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ rating, comment, path: pathname }),
+				body: JSON.stringify({ rating, comment, email, path: pathname }),
 			})
 
 			if (!response.ok) {
@@ -132,6 +137,19 @@ export function FeedbackPrompt({ onDismiss }: { onDismiss: () => void }) {
 								maxLength={2000}
 								placeholder="Anything you want to add — what worked, what got in the way…"
 								className="border-line bg-paper-sunk/40 focus-within:border-accent/40 placeholder:text-ink-faint/70 w-full resize-none rounded-xl border px-3.5 py-3 text-[0.9375rem] outline-none transition-colors"
+							/>
+						</label>
+
+						<label className="mt-3 block">
+							<span className="sr-only">Email address</span>
+							<input
+								type="email"
+								value={email}
+								onChange={event => setEmail(event.target.value)}
+								maxLength={255}
+								autoComplete="email"
+								placeholder="Email, if you would like a reply (optional)"
+								className="border-line bg-paper-sunk/40 focus:border-accent/40 placeholder:text-ink-faint/70 w-full rounded-xl border px-3.5 py-2.5 text-[0.9375rem] outline-none transition-colors"
 							/>
 						</label>
 

@@ -8,6 +8,7 @@ import { clientIp, rateLimit, tooManyRequests } from '@/app/lib/rate-limit'
 const bodySchema = z.object({
 	rating: z.number().int().min(1).max(5),
 	comment: z.string().max(2000).optional(),
+	email: z.string().max(255).optional(),
 	path: z.string().max(512).optional(),
 })
 
@@ -31,6 +32,17 @@ export async function POST(request: Request) {
 		return tooManyRequests(throttled.retryAfter)
 	}
 
+	// Optional, but a typo is worth saying out loud rather than silently
+	// dropping — the whole point of the field is being able to reply.
+	const typed = parsed.data.email?.trim().toLowerCase() || null
+
+	if (typed && !z.string().email().safeParse(typed).success) {
+		return NextResponse.json(
+			{ error: 'That email does not look right.', code: 'invalid_email' },
+			{ status: 400 },
+		)
+	}
+
 	const user = await currentUser()
 
 	await getDb()
@@ -40,6 +52,7 @@ export async function POST(request: Request) {
 			deviceId: await readDeviceId(),
 			rating: parsed.data.rating,
 			comment: parsed.data.comment?.trim() || null,
+			email: typed,
 			path: parsed.data.path ?? null,
 		})
 

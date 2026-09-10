@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { eq, sql } from 'drizzle-orm'
 import type Stripe from 'stripe'
+import { logEvent } from '@/app/lib/analytics/events'
 import { grantForIntent, markIntentFailed, rememberCard } from '@/app/lib/billing'
 import { getDb, transactions, users } from '@/app/lib/db'
 import { getStripe } from '@/app/lib/stripe'
@@ -54,7 +55,18 @@ async function handle(event: Stripe.Event): Promise<void> {
 		case 'payment_intent.succeeded': {
 			const intent = event.data.object
 
-			await grantForIntent(intent)
+			// Stripe is the caller here, so there are no cookies and no device to
+			// tie this to — the account is the only identity available.
+			if (await grantForIntent(intent)) {
+				await logEvent('purchase_succeeded', {
+					deviceId: null,
+					userId: intent.metadata?.userId ?? null,
+					props: {
+						cents: intent.amount,
+						tokens: Number(intent.metadata?.tokens) || null,
+					},
+				})
+			}
 
 			if (intent.metadata?.userId) {
 				await rememberCard(intent.metadata.userId, intent)
@@ -63,9 +75,24 @@ async function handle(event: Stripe.Event): Promise<void> {
 			break
 		}
 
-		case 'payment_intent.payment_failed':
-			await markIntentFailed(event.data.object)
+		case 'payment_intent.payment_failed': {
+			const intent = event.data.object
+
+			await markIntentFailed(intent)
+
+			await logEvent('purchase_failed', {
+				deviceId: null,
+				userId: intent.metadata?.userId ?? null,
+				props: {
+					code:
+						intent.last_payment_error?.decline_code ??
+						intent.last_payment_error?.code ??
+						null,
+				},
+			})
+
 			break
+		}
 
 		case 'charge.refunded':
 			await reverse(event.data.object, 'refunded')

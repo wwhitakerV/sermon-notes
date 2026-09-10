@@ -51,8 +51,8 @@ export function ProgressView({ steps, meta, onCancel }: Props) {
 					Preparing your sermon notes
 				</h1>
 				<p className="text-ink-muted mt-3 text-[0.9375rem]">
-					This usually takes a minute or two for a full-length sermon. You can
-					leave this open.
+					This usually takes about 15 seconds, even for a full-length sermon.
+					You can leave this open.
 				</p>
 			</div>
 

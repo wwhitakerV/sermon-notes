@@ -4,19 +4,19 @@
 	color-scheme: light;
 
 	/* Surfaces — warm paper */
-	--paper: #faf8f5;
-	--paper-sunk: #f3eee6;
+	--paper: #fcfbf9;
+	--paper-sunk: #f1efed;
 	--surface: #ffffff;
 
 	/* Ink */
 	--ink: #1a1815;
-	--ink-muted: #5c554c;
-	--ink-faint: #7c7468;
+	--ink-muted: #423c35;
+	--ink-faint: #6f6c69;
 	--ink-lift: #34302a;
 
 	/* Hairlines */
-	--line: #e8e1d7;
-	--line-strong: #d9d0c3;
+	--line: #e4e2e0;
+	--line-strong: #d3d1cf;
 
 	/* Ember accent — the one pop of color */
 	--accent: #e2590b;
@@ -327,8 +327,8 @@ body {
 .legal p,
 .legal li {
 	color: var(--ink-muted);
-	font-size: 0.9375rem;
-	line-height: 1.75;
+	font-size: 1rem;
+	line-height: 1.7;
 	margin-top: 0.875rem;
 	text-wrap: pretty;
 }
