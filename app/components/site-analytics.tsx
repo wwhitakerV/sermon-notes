@@ -1,6 +1,7 @@
 'use client'
 
 import { Analytics } from '@vercel/analytics/next'
+import { NO_TRACK_COOKIE } from '@/app/lib/analytics/no-track-cookie'
 import { isReservedSlug } from '@/app/lib/slug'
 
 /**
@@ -16,6 +17,16 @@ export function SiteAnalytics() {
 	return (
 		<Analytics
 			beforeSend={event => {
+				// The same switch that silences our own event log. Readable here
+				// only because that cookie is deliberately not httpOnly.
+				if (
+					document.cookie
+						.split('; ')
+						.some(entry => entry === `${NO_TRACK_COOKIE}=1`)
+				) {
+					return null
+				}
+
 				let pathname: string
 
 				try {

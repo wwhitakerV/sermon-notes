@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { accountStateFor } from '@/app/lib/account-state'
 import { findUserByEmail, loginSchema } from '@/app/lib/auth/accounts'
 import { logEvent } from '@/app/lib/analytics/events'
+import { excludeIfAdmin } from '@/app/lib/analytics/no-track'
 import { readDeviceId } from '@/app/lib/auth/device'
 import { verifyPassword } from '@/app/lib/auth/password'
 import { createSession } from '@/app/lib/auth/session'
@@ -47,6 +48,10 @@ export async function POST(request: Request) {
 	}
 
 	await createSession(user.id)
+
+	// Before the event, not after: otherwise your own sign-in is the one
+	// thing that always gets counted.
+	await excludeIfAdmin(user.email)
 
 	await logEvent('signin_succeeded', { deviceId, userId: user.id })
 

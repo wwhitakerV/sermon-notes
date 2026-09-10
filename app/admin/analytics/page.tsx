@@ -2,7 +2,9 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { ArrowRightIcon } from '@/app/components/icons'
+import { NoTrackToggle } from '../no-track-toggle'
 import { currentAdmin } from '@/app/lib/admin'
+import { isNoTrack } from '@/app/lib/analytics/no-track'
 import { longDate } from '@/app/lib/long-date'
 import {
 	readCacheSplit,
@@ -48,6 +50,7 @@ export default async function AnalyticsPage({
 
 	const params = await searchParams
 	const window = resolveRange(params)
+	const excluded = await isNoTrack()
 
 	const [funnel, cache, steps, sources, repeats, visits] = await Promise.all([
 		readFunnel(window.range),
@@ -121,6 +124,8 @@ export default async function AnalyticsPage({
 		<p className="text-ink-faint mt-2.5 text-[0.75rem]">
 			Showing {window.label}
 		</p>
+
+		<NoTrackToggle excluded={excluded} />
 
 		{nothingYet && (
 			<p className="border-line bg-paper-sunk/60 text-ink-muted mt-8 rounded-xl border px-5 py-4 text-[0.9375rem]">

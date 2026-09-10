@@ -6,6 +6,7 @@ import {
 	decodeAttribution,
 	type AttributionType,
 } from './attribution-cookie'
+import { NO_TRACK_COOKIE } from './no-track-cookie'
 
 /**
  * Every step worth counting, named once so a typo fails the build rather than
@@ -53,6 +54,12 @@ export async function logEvent(
 	options: LogOptionsType = {},
 ): Promise<void> {
 	try {
+		// Your own clicking around is not data. Checked first so an excluded
+		// browser costs nothing.
+		if (await optedOut()) {
+			return
+		}
+
 		const attribution = await readAttribution()
 
 		const props = {
@@ -84,6 +91,18 @@ export async function logEvent(
  * inside an open stream, which belong to the same visit as the
  * `link_submitted` that already carried it.
  */
+/** Whether this browser has asked to be left out of the numbers. */
+async function optedOut(): Promise<boolean> {
+	try {
+		const store = await cookies()
+
+		return store.get(NO_TRACK_COOKIE)?.value === '1'
+	} catch {
+		// No request to read — a background job, say. Record it.
+		return false
+	}
+}
+
 async function readAttribution(): Promise<AttributionType | null> {
 	try {
 		const store = await cookies()
